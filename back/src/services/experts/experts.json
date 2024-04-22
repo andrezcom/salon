@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1,
+    "name": "Cesar Carvajal",
+    "email": "cesar@gmail.com",
+    "document": 9790864,
+    "movil": "3014301556",
+    "active": true
+  },
+  {
+    "id": 2,
+    "name": "Julina Falcon",
+    "email": "julinafalcon46@gmail.com",
+    "document": 344052,
+    "movil": "3108928996",
+    "active": true
+  },
+  {
+    "id": 3,
+    "name": "Laura Salazar",
+    "email": "laurasalazarojas@gmail.com",
+    "document": 1088,
+    "movil": "3168948571",
+    "active": true
+  }
+]
