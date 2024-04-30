@@ -1,18 +1,16 @@
 import express from "express";
-import expert from "./routes/experts";
+import routes from "./routes/index";
+import 'dotenv/config'
+
+import connect from './db/connect';
 
 const app = express();
 
 app.use(express.json());
-app.use("/api/experts", expert);
+app.use("/api", routes);
 
-const PORT = 3000;
-
-app.get("/ping", (_req, res) => {
-  console.log("GET PING");
-  res.send("run server on 3000...");
-});
-
+const PORT = process.env.PORT;
+connect()
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
