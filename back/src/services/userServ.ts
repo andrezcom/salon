@@ -1,4 +1,4 @@
-import User from '../../models/users';
+import User from '../models/user';
 
 
 export async function getUsersSrv() {
@@ -17,3 +17,8 @@ export async function postUserSrv(user: any) {
 }
 
 
+export async function putUserSrv(user: any) {
+  const putUser = new User(user)
+  await User.findByIdAndUpdate(putUser._id, putUser);
+  return putUser
+}
