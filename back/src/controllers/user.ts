@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { getUsersSrv, postUserSrv } from '../services/user/userServ';
-import User from '../models/users';
+import { getUsersSrv, postUserSrv, putUserSrv } from '../services/userServ';
+
 
 export async function getUsersCtrl(_req: Request, res: Response) {
   try {
@@ -19,13 +19,12 @@ export const userById = (_req: Request, res: Response) => {
 
 export async function postUserCtrl(req: Request, res: Response) {
   if (!req.body) {
-    throw console.error('no hay')
+    throw console.error('There is no request')
   };
 
   try {
-    const User = req.body;
-    const newUser = await postUserSrv(User)
-
+    const user = req.body;
+    const newUser = await postUserSrv(user)
     res.status(200).json({ data: newUser });
   } catch (err) {
     res.status(500).json({
@@ -36,14 +35,13 @@ export async function postUserCtrl(req: Request, res: Response) {
 
 export async function putUserCtrl(req: Request, res: Response) {
   if (!req.body) {
-    throw console.error('no hay')
+    throw console.error('There is no request')
   };
 
   try {
     const user = req.body;
-    const newUser = new User(user);
-    await User.findByIdAndUpdate(newUser._id, newUser);
-    res.json(newUser)
+    const putUser = await putUserSrv(user)
+    res.status(200).json({ data: putUser });
   } catch (err) {
     res.status(500).json({
       message: 'Internal server error', err: err
