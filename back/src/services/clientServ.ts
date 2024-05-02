@@ -1,4 +1,5 @@
 import Client from '../models/client';
+import * as type from '../types.'
 
 export async function getClientsSrv() {
   try {
@@ -9,7 +10,7 @@ export async function getClientsSrv() {
   }
 }
 
-export async function postClientSrv(client: any) {
+export async function postClientSrv(client: type.Client) {
   const newClient = new Client(client)
   const clientCreated = await newClient.save();
   return clientCreated
