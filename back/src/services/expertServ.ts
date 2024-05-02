@@ -1,5 +1,5 @@
 import Expert from '../models/expert';
-
+import * as type from '../types.'
 
 export async function getExpertsSrv() {
   try {
@@ -10,14 +10,14 @@ export async function getExpertsSrv() {
   }
 }
 
-export async function postExpertSrv(expert: any) {
+export async function postExpertSrv(expert: type.Expert) {
   const newExpert = new Expert(expert)
   const expertCreated = await newExpert.save();
   return expertCreated
 }
 
 
-export async function putExpertSrv(expert: any) {
+export async function putExpertSrv(expert: type.Expert) {
   const putExpert = new Expert(expert)
   await Expert.findByIdAndUpdate(putExpert._id, putExpert);
   return putExpert
