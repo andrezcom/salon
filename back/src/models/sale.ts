@@ -1,5 +1,5 @@
-import { Schema, model } from "mongoose";
-const AutoIncrement = require('mongoose-sequence')
+import mongoose, { Schema, model } from "mongoose";
+const AutoIncrement = require('mongoose-sequence')(mongoose);
 
 
 const saleSchema = new Schema({
@@ -7,7 +7,14 @@ const saleSchema = new Schema({
     type: String,
     required: true
   },
-
+  nameClient: {
+    type: String,
+    required: true
+  },
+  email: {
+    type: String,
+    required: true,
+  },
   date: {
     type: Date,
     required: true
@@ -25,6 +32,10 @@ const saleSchema = new Schema({
     input: [{
       inputId: {
         type: Number,
+        required: true
+      },
+      nameProduct: {
+        type: String,
         required: true
       },
       inputPrice: {

@@ -36,12 +36,6 @@ export interface product {
   active: Boolean
 }
 
-
-
-
-
-
-
 export interface user {
   nameUser: String,
   email: String,
@@ -51,4 +45,35 @@ export interface user {
     seller: Boolean
   },
   active: Boolean
+}
+
+export interface sale {
+  idClient: String,
+  nameClient: String,
+  email: String,
+  date: Date,
+  services: [{
+    serviceId: Number,
+    expertId: Number,
+    input: [{
+      inputId: Number,
+      nameProduct: String,
+      inputPrice: Number,
+      qty: Number,
+      amount: Number,
+    }],
+    amount: Number,
+  }],
+  retail: [{
+    productId: Number,
+    clientPrice: Number,
+    qty: Number,
+    amount: Number,
+    expertId: Number,
+  }],
+  total: Number,
+  paymentMethod: [{
+    payment: String,
+    amount: Number,
+  }],
 }
