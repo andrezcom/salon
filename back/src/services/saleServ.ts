@@ -1,5 +1,5 @@
 import Sale from '../models/sale';
-
+import * as type from '../types.';
 
 export async function getSalesSrv() {
   try {
@@ -10,14 +10,14 @@ export async function getSalesSrv() {
   }
 }
 
-export async function postSaleSrv(sale: any) {
+export async function postSaleSrv(sale: type.Sale) {
   const newSale = new Sale(sale)
   const saleCreated = await newSale.save();
   return saleCreated
 }
 
 
-export async function putSaleSrv(sale: any) {
+export async function putSaleSrv(sale: type.Sale) {
   const putSale = new Sale(sale)
   await Sale.findByIdAndUpdate(putSale._id, putSale);
   return putSale

@@ -17,7 +17,7 @@ export async function postClientSrv(client: type.Client) {
 }
 
 
-export async function putClientSrv(client: any) {
+export async function putClientSrv(client: type.Client) {
   const putClient = new Client(client)
   await Client.findByIdAndUpdate(putClient._id, putClient);
   return putClient
