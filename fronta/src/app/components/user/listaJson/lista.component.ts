@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import { UserService } from '../../../services/user.Service'
+import { UserService } from '../../../services/user.service'
 import { JsonPipe } from '@angular/common';
 
 @Component({
@@ -10,6 +10,6 @@ import { JsonPipe } from '@angular/common';
   styleUrl: './lista.component.css'
 })
 export class ListaComponent {
-  private readonly userSWC = inject(UserService);
-  users = this.userSWC.users;
+  private readonly userService = inject(UserService);
+  users = this.userService.users;
 }

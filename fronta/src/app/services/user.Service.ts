@@ -13,12 +13,14 @@ export class UserService {
 
   constructor() {
     this.getUsers()
+    console.log('models');
+
   }
 
   public getUsers(): void {
     this._http
-      .get<any[]>(`${this._url}`)
-      .pipe(tap((data: any[]) => this.users.set(data)))
+      .get<User[]>(`${this._url}`)
+      .pipe(tap((data: User[]) => this.users.set(data)))
       .subscribe();
   }
 
