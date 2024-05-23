@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject } from '@angular/core';
 
 import { NzTableModule } from 'ng-zorro-antd/table';
 import { FormsModule } from '@angular/forms';
@@ -7,6 +7,7 @@ import { NzPopconfirmModule } from 'ng-zorro-antd/popconfirm';
 import { NzPopoverModule } from 'ng-zorro-antd/popover';
 import { RouterOutlet } from '@angular/router';
 import { User } from '../../../shared/models/user';
+import { NzFormModule } from 'ng-zorro-antd/form';
 
 import { UserService } from '../../../services/user.service'
 
@@ -17,6 +18,7 @@ import { UserService } from '../../../services/user.service'
   selector: 'app-tabla-user',
   standalone: true,
   imports: [
+    NzFormModule,
     NzTableModule,
     FormsModule,
     CommonModule,
@@ -28,7 +30,7 @@ import { UserService } from '../../../services/user.service'
   styleUrl: './tabla.component.css'
 })
 
-export class TablaComponentUs implements OnInit {
+export class TablaComponentUs {
 
   private readonly userService = inject(UserService);
   users = this.userService.users;
@@ -63,19 +65,6 @@ export class TablaComponentUs implements OnInit {
   }
 
   deleteRow(email: String): void {
-    this.listOfData = this.listOfData.filter(d => d.email != email);
+    this.users.update(((users: User[]) => users.filter((user: User) => user.email !== email)));
   }
-  ngOnInit(): void {
-  }
-
 }
-
-/* 
-
-  
-
-
-  ngOnInit(): void {
-    /* this.userService3.getUsers().subscribe(users => { console.log(users); }); */
-
-

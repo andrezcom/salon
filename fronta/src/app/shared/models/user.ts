@@ -1,11 +1,11 @@
 export interface User {
-  _id: String,
+  _id?: String,
   nameUser: String,
   email: String,
   pass: String,
   role: {
-    admin: Boolean,
-    seller: Boolean
+    admin: boolean,
+    seller: boolean
   },
-  active: Boolean
+  active?: Boolean
 }

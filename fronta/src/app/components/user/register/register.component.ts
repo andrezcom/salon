@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
+import { UserService } from '../../../services/user.service';
 
 import {
   AbstractControl,
@@ -10,13 +11,12 @@ import {
   ValidatorFn,
   Validators
 } from '@angular/forms';
-
+import { NzMessageService } from 'ng-zorro-antd/message'
 import { NzCheckboxModule } from 'ng-zorro-antd/checkbox';
 import { Observable, Observer } from 'rxjs';
 import { NzInputModule } from 'ng-zorro-antd/input';
 import { NzFormModule } from 'ng-zorro-antd/form';
 import { ReactiveFormsModule } from '@angular/forms';
-
 
 @Component({
   selector: 'app-register',
@@ -28,16 +28,23 @@ import { ReactiveFormsModule } from '@angular/forms';
 })
 export class RegisterComponent {
   validateForm: FormGroup<{
-    userName: FormControl<string>;
+    nameUser: FormControl<string>;
     email: FormControl<string>;
-    password: FormControl<string>;
+    pass: FormControl<string>;
     confirm: FormControl<string>;
-    remember: FormControl<boolean>;
-    remember2: FormControl<boolean>;
+    admin: FormControl<boolean>;
+    seller: FormControl<boolean>;
   }>;
 
+  private readonly userService = inject(UserService);
+  private nzMessageService = inject(NzMessageService);
+
   submitForm(): void {
+    const user = this.userService.registerUser(this.validateForm.value)
+    this.validateForm.reset();
+    this.nzMessageService.create("success", `Usuario creado con éxito`);
     console.log('submit', this.validateForm.value);
+    console.log('submit compo', user);
   }
 
   resetForm(e: MouseEvent): void {
@@ -65,7 +72,7 @@ export class RegisterComponent {
   confirmValidator: ValidatorFn = (control: AbstractControl) => {
     if (!control.value) {
       return { error: true, required: true };
-    } else if (control.value !== this.validateForm.controls.password.value) {
+    } else if (control.value !== this.validateForm.controls.pass.value) {
       return { confirm: true, error: true };
     }
     return {};
@@ -73,12 +80,13 @@ export class RegisterComponent {
 
   constructor(private fb: NonNullableFormBuilder) {
     this.validateForm = this.fb.group({
-      userName: ['', [Validators.required], [this.userNameAsyncValidator]],
+      nameUser: ['', [Validators.required], [this.userNameAsyncValidator]],
       email: ['', [Validators.email, Validators.required]],
-      password: ['', [Validators.required]],
+      pass: ['', [Validators.required]],
       confirm: ['', [this.confirmValidator]],
-      remember: [false],
-      remember2: [false]
+      admin: [false],
+      seller: [false]
     });
   }
+
 }

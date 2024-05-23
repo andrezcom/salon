@@ -15,14 +15,18 @@
       <tbody>
         <tr *ngFor="let data of editRowTable.data" class="editable-row">
           <td>
-            <div class="editable-cell" [hidden]="editId === data._id" (click)="startEdit(data._id)">
+            <div class="editable-cell" [hidden]="editId === data._id" (click)="startEdit(data.email)">
               {{ data.nameUser }}
             </div>
             <input [hidden]="editId !== data._id" type="text" nz-input [(ngModel)]="data.nameUser" (blur)="stopEdit()" />
           </td>
           <td>{{ data.email }}</td>
-          <td>{{ data.role.admin }}</td>
-          <td>{{ data.role.seller }}</td>
+          <td
+          [nzChecked]= data.role.admin
+          ></td>
+          <td
+          [nzChecked]= data.role.seller
+          ></td>
           <td>
             <a nz-popconfirm nzPopconfirmTitle="Sure to delete?" (nzOnConfirm)="deleteRow(data.email)">Delete</a>
           </td>

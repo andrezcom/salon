@@ -24,4 +24,27 @@ export class UserService {
       .subscribe();
   }
 
+  public registerUser(user: any) {
+    let newUser: User = {
+      nameUser: user.nameUser,
+      email: user.email,
+      pass: user.pass,
+      role: {
+        seller: user.seller,
+        admin: user.admin
+      }
+    };
+    console.log('este es mi nuevo user', newUser);
+    return this._http
+      .post<User>(`${this._url}`, newUser)
+      .subscribe({
+        next: (_data) => {
+          console.log(_data);
+        },
+        error: (err) => {
+          console.log(err);
+        }
+      });
+  }
+
 }
