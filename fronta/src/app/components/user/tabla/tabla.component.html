@@ -1,7 +1,7 @@
 <button nz-button (click)="addRow()" nzType="primary">Add</button>
     <br />
     <br />
-    <nz-table #editRowTable nzBordered [nzData]="  this.users()    ">
+    <nz-table #editRowTable nzBordered [nzPageSize]=5 [nzData]="  this.users()    ">
       
       <thead>
         <tr>

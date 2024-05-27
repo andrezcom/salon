@@ -11,7 +11,7 @@ import {
   ValidatorFn,
   Validators
 } from '@angular/forms';
-import { NzMessageService } from 'ng-zorro-antd/message'
+
 import { NzCheckboxModule } from 'ng-zorro-antd/checkbox';
 import { Observable, Observer } from 'rxjs';
 import { NzInputModule } from 'ng-zorro-antd/input';
@@ -37,12 +37,11 @@ export class RegisterComponent {
   }>;
 
   private readonly userService = inject(UserService);
-  private nzMessageService = inject(NzMessageService);
+
 
   submitForm(): void {
     const user = this.userService.registerUser(this.validateForm.value)
     this.validateForm.reset();
-    this.nzMessageService.create("success", `Usuario creado con éxito`);
     console.log('submit', this.validateForm.value);
     console.log('submit compo', user);
   }

@@ -1,5 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { FormControl, FormGroup, NonNullableFormBuilder, Validators } from '@angular/forms';
+import { UserService } from '../../../services/user.service'
 
 import { NzCheckboxModule } from 'ng-zorro-antd/checkbox';
 import { NzInputModule } from 'ng-zorro-antd/input';
@@ -24,18 +25,28 @@ import { NzButtonModule } from 'ng-zorro-antd/button';
 })
 export class LoginComponent {
   validateForm: FormGroup<{
-    userName: FormControl<string>;
-    password: FormControl<string>;
+    nameUser: FormControl<string>;
+    pass: FormControl<string>;
     remember: FormControl<boolean>;
   }> = this.fb.group({
-    userName: ['', [Validators.required]],
-    password: ['', [Validators.required]],
+    nameUser: ['', [Validators.required]],
+    pass: ['', [Validators.required]],
     remember: [true]
   });
 
+  private readonly userService = inject(UserService);
   submitForm(): void {
+
+    /* this.validateForm.reset();
+    console.log('submit que envio?:  ', this.validateForm.value);
+    console.log('submit compo', user); */
+
+
     if (this.validateForm.valid) {
-      console.log('submit', this.validateForm.value);
+      console.log('submit envio', this.validateForm.value);
+      const user = this.userService.loginUser(this.validateForm.value)
+      console.log(user);
+
     } else {
       Object.values(this.validateForm.controls).forEach(control => {
         if (control.invalid) {
