@@ -41,6 +41,8 @@ export async function loginUserCtrl(req: Request, res: Response) {
     throw console.error('There is error in user and password')
   };
   try {
+    console.log('mi req.body: ', req.body);
+
     const login = await loginUserSrv(req.body)
     res.status(200).json({
       login: login.success,
@@ -49,7 +51,7 @@ export async function loginUserCtrl(req: Request, res: Response) {
     });
   } catch (err) {
     res.status(500).json({
-      message: 'Internal server error', err: err
+      message: 'Internal server error x', err: err
     });
   }
 };

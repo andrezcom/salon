@@ -4,8 +4,10 @@ export interface User {
   email: String,
   pass: String,
   role: {
-    admin: Boolean,
-    seller: Boolean
+    admin: boolean,
+    seller: boolean
   },
-  active: Boolean
+  active?: Boolean
 }
+
+export type newUser = Omit<User, "_id">
