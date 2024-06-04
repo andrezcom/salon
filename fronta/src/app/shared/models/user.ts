@@ -1,5 +1,5 @@
 export interface User {
-  _id?: String,
+  _id: String,
   nameUser: String,
   email: String,
   pass: String,
@@ -9,3 +9,5 @@ export interface User {
   },
   active?: Boolean
 }
+
+export type newUser = Omit<User, "_id">
