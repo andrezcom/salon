@@ -61,7 +61,8 @@ export class UserService {
       role: {
         seller: user.seller,
         admin: user.admin
-      }
+      },
+      active: true
     };
     return this._http
       .post<User>(`${this._url}`, newUser)
@@ -84,11 +85,12 @@ export class UserService {
       email: user.email,
       pass: user.pass,
       role: {
-        seller: user.seller,
-        admin: user.admin
-      }
+        seller: user.role.seller,
+        admin: user.role.admin
+      },
+      active: user.active
     };
-    console.log('entre a put');
+    console.log('entre a put', newUser);
 
     return this._http
       .put<User>(`${this._url}`, newUser)
@@ -104,26 +106,18 @@ export class UserService {
       });
   }
 
-  public deleteUser(user: any) {
-    let delUser: User = {
-      _id: user._id,
-      nameUser: user.nameUser,
-      email: user.email,
-      pass: user.pass,
-      role: {
-        seller: user.seller,
-        admin: user.admin
-      }
-    };
+  public deleteUser(_id: any) {
+    console.log('mi id: ', _id);
+
     return this._http
-      .post<User>(`${this._url}`, delUser)
+      .delete<User>(`${this._url}/${_id}`)
       .subscribe({
         next: (_data) => {
-          this.nzMessageService.create("success", `Usuario creado con éxito`);
+          this.nzMessageService.create("success", `Usuario borrado con éxito`);
           console.log(_data);
         },
         error: (err) => {
-          this.nzMessageService.create("error", `ERROR al crear usuario`);
+          this.nzMessageService.create("error", `ERROR al borrar usuario`);
           console.log(err);
         }
       });

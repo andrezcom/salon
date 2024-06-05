@@ -7,7 +7,7 @@ export interface User {
     admin: boolean,
     seller: boolean
   },
-  active?: Boolean
+  active: boolean
 }
 
 export type newUser = Omit<User, "_id">

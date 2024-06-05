@@ -38,16 +38,11 @@ export class TablaComponentUs {
 
   startEdit(data: any): void {
     this.editId = data._id;
-    console.log('esto click', data);
-
   }
   stopEdit(data: any): void {
     this.editId = null;
     const user = this.userService.putUser(data)
-
-    console.log('esto recibo', user);
   }
-
   addRow(): void {
     this.listOfData = [
       ...this.listOfData,
@@ -68,20 +63,18 @@ export class TablaComponentUs {
 
   deleteRow(_id: String): void {
     this.users.update(((users: User[]) => users.filter((user: User) => user.email !== _id)));
+    const user = this.userService.deleteUser(_id)
 
   }
 
-  onCheckboxChange(event: any, data: any): void {
+  onCheckboxChange(event: any, data: any, place: String): void {
     // Comprueba si la casilla de verificación fue marcada o desmarcada
     const isChecked = event.target.checked;
+    if (place === 'admin') data.role.admin = isChecked;
+    if (place === 'seller') data.role.seller = isChecked;
+    if (place === 'active') data.active = isChecked;
+    console.log('esta es mi data', data);
 
-    // Realiza acciones basadas en el estado de la casilla de verificación
-    if (isChecked) {
-      console.log('Casilla de verificación marcada', data);
-      // Aquí puedes llamar a otra función o realizar acciones cuando la casilla de verificación es marcada
-    } else {
-      console.log('Casilla de verificación desmarcada', data);
-      // Aquí puedes llamar a otra función o realizar acciones cuando la casilla de verificación es desmarcada
-    }
+    this.stopEdit(data);
   }
 }
