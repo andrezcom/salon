@@ -84,11 +84,11 @@ export class UserService {
       email: user.email,
       pass: user.pass,
       role: {
-        seller: user.seller,
-        admin: user.admin
+        seller: user.role.seller,
+        admin: user.role.admin
       }
     };
-    console.log('entre a put');
+    console.log('entre a put', newUser);
 
     return this._http
       .put<User>(`${this._url}`, newUser)
