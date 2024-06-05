@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { getUsersSrv, postUserSrv, putUserSrv, loginUserSrv } from '../services/userServ';
+import { getUsersSrv, postUserSrv, putUserSrv, loginUserSrv, deleteUserSrv } from '../services/userServ';
 
 const jwt = require('jsonwebtoken');
 
@@ -71,6 +71,24 @@ export async function putUserCtrl(req: Request, res: Response) {
     });
   }
 };
+
+export async function deleteUserCtrl(req: Request, res: Response) {
+  console.log(req.params.id + "mi body");
+  try {
+    if (!req.params.id) {
+      throw console.error('request params is required')
+    }
+
+    const user = await deleteUserSrv(req.params.id)
+
+    res.status(200).json(user)
+  } catch (err) {
+    res.status(500).json({
+      message: 'Internal server error',
+      err: err,
+    })
+  }
+}
 
 function createToken(user: any) {
   const payload = {

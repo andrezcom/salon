@@ -8,7 +8,8 @@
           <th nzWidth="30%">Nombre</th>
           <th>Email</th>
           <th>Admin</th>
-          <th>Seller</th>
+          <th>Ventas</th>
+          <th>Activo</th>
           <th>Action</th>
         </tr>
       </thead>
@@ -32,8 +33,11 @@
           <td
           [nzChecked]= "data.role.seller" (change)="onCheckboxChange($event, data, 'seller')"
           ></td>
+          <td
+          [nzChecked]= "data.active" (change)="onCheckboxChange($event, data, 'active')"
+          ></td>
           <td>
-            <a nz-popconfirm nzPopconfirmTitle="Sure to delete?" (nzOnConfirm)="deleteRow(data.email)">Delete</a>
+            <a nz-popconfirm nzPopconfirmTitle="Sure to delete?" (nzOnConfirm)="deleteRow(data._id)">Delete</a>
           </td>
         </tr>
       </tbody>

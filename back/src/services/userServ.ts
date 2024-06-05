@@ -34,3 +34,12 @@ export async function putUserSrv(user: any) {
   await User.findByIdAndUpdate(putUser._id, putUser);
   return putUser
 }
+
+export async function deleteUserSrv(id: string) {
+  try {
+    const user = await User.findByIdAndDelete(id)
+    return user
+  } catch (error: unknown) {
+    throw new Error('Error deleting user')
+  }
+}
