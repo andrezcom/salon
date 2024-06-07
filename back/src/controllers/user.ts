@@ -41,8 +41,6 @@ export async function loginUserCtrl(req: Request, res: Response) {
     throw console.error('There is error in user and password')
   };
   try {
-    console.log('mi req.body: ', req.body);
-
     const login = await loginUserSrv(req.body)
     res.status(200).json({
       login: login.success,
@@ -73,7 +71,6 @@ export async function putUserCtrl(req: Request, res: Response) {
 };
 
 export async function deleteUserCtrl(req: Request, res: Response) {
-  console.log(req.params.id + "mi body");
   try {
     if (!req.params.id) {
       throw console.error('request params is required')

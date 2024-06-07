@@ -1,8 +1,8 @@
 export interface User {
-  _id: String,
-  nameUser: String,
-  email: String,
-  pass: String,
+  _id: string,
+  nameUser: string,
+  email: string,
+  pass: string,
   role: {
     admin: boolean,
     seller: boolean

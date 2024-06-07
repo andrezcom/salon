@@ -10,7 +10,7 @@ import { NzFormModule } from 'ng-zorro-antd/form';
 
 import { User } from '../../../shared/models/user';
 import { UserService } from '../../../services/user.service'
-import { ValidationErrors } from '../../../shared/validtors';
+import { ValidateErrors } from '../../../shared/validtors';
 
 @Component({
   selector: 'app-tabla-user',
@@ -31,7 +31,6 @@ import { ValidationErrors } from '../../../shared/validtors';
 export class TablaComponentUs {
 
   private readonly userService = inject(UserService);
-  private readonly validationErrors = inject(ValidationErrors)
   users = this.userService.users;
 
   i = 0;
@@ -40,11 +39,10 @@ export class TablaComponentUs {
 
   startEdit(data: any): void {
     this.editId = data._id;
-    console.log('start: ', this.validationErrors.founded(data.email));
   }
-  stopEdit(data: any): void {
+  stopEdit(data: User): void {
     this.editId = null;
-    console.log('stop: ', this.validationErrors.founded(data.email));
+    data.email = data.email.toLowerCase()
     this.userService.putUser(data)
   }
   addRow(): void {
@@ -62,7 +60,6 @@ export class TablaComponentUs {
     if (place === 'admin') data.role.admin = isChecked;
     if (place === 'seller') data.role.seller = isChecked;
     if (place === 'active') data.active = isChecked;
-    console.log('esta es mi data', data);
 
     this.stopEdit(data);
   }

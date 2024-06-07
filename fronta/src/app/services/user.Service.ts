@@ -33,9 +33,6 @@ export class UserService {
       email: user.nameUser,
       pass: user.pass
     };
-    console.log(
-      'mi loginUser es: ', loginUser
-    );
 
     return this._http
       .post<any>(`${this._url}/login`, loginUser)
@@ -43,11 +40,9 @@ export class UserService {
         next: (_data) => {
           this.nzMessageService.create("success", `Usuario autorizado con éxito`);
           localStorage.setItem('token', _data.token)
-          console.log('mi token: ', localStorage.getItem('token'));
         },
         error: (err) => {
           this.nzMessageService.create("error", `ERROR con el usuario`);
-          console.log(err);
         }
       });
   }
@@ -64,20 +59,15 @@ export class UserService {
       active: true
     };
 
-
-
-
     return this._http
       .post<newUser>(`${this._url}`, newUser)
       .subscribe({
         next: (_data) => {
           this.nzMessageService.create("success", `Usuario creado con éxito`);
           this.getUsers()
-          console.log(_data);
         },
         error: (err) => {
           this.nzMessageService.create("error", `ERROR al crear usuario`);
-          console.log(err);
         }
       });
   }
@@ -94,16 +84,24 @@ export class UserService {
       },
       active: user.active
     };
+
+    let mailValido = false;
+    let EMAIL_REGEX = /^[a-zA-Z0-9.!#$%&’+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)$/;
+    if (!newUser.email.match(EMAIL_REGEX)) {
+      this.getUsers()
+      return this.nzMessageService.create("error", 'Email invalido')
+    }
+
     if (newUser.email === '') {
       this.getUsers()
       return this.nzMessageService.create("error", 'Email Vacio')
     }
+
     return this._http
       .put<User>(`${this._url}`, newUser)
       .subscribe({
         next: (_data) => {
           this.nzMessageService.create("success", `Usuario modificado con éxito`);
-          console.log(_data);
         },
         error: (err) => {
           this.getUsers()
@@ -111,7 +109,6 @@ export class UserService {
             this.nzMessageService.create("error", 'Email Duplicado')
           }
           else this.nzMessageService.create("error", 'ERROR al modificar usuario')
-          console.log(err);
         }
       });
   }
@@ -122,11 +119,9 @@ export class UserService {
       .subscribe({
         next: (_data) => {
           this.nzMessageService.create("success", `Usuario borrado con éxito`);
-          console.log(_data);
         },
         error: (err) => {
           this.nzMessageService.create("error", `ERROR al borrar usuario`);
-          console.log(err);
         }
       });
   }
