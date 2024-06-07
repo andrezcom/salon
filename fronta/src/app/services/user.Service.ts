@@ -13,17 +13,15 @@ export class UserService {
   public users = signal<User[]>([]);
 
   private readonly _http = inject(HttpClient);
-  /* private readonly _httpHeaders = inject(HttpHeaders); */
   private readonly _url = environment.url;
   private readonly nzMessageService = inject(NzMessageService);
+
   constructor() {
     this.getUsers()
-    console.log('models');
-
   }
 
   public getUsers(): void {
-    httpOpions:
+    this.users.bind
     this._http
       .get<User[]>(`${this._url}`)
       .pipe(tap((data: User[]) => this.users.set(data)))
@@ -53,6 +51,7 @@ export class UserService {
         }
       });
   }
+
   public registerUser(user: any) {
     let newUser: newUser = {
       nameUser: user.nameUser,
@@ -64,11 +63,16 @@ export class UserService {
       },
       active: true
     };
+
+
+
+
     return this._http
-      .post<User>(`${this._url}`, newUser)
+      .post<newUser>(`${this._url}`, newUser)
       .subscribe({
         next: (_data) => {
           this.nzMessageService.create("success", `Usuario creado con éxito`);
+          this.getUsers()
           console.log(_data);
         },
         error: (err) => {
@@ -90,8 +94,10 @@ export class UserService {
       },
       active: user.active
     };
-    console.log('entre a put', newUser);
-
+    if (newUser.email === '') {
+      this.getUsers()
+      return this.nzMessageService.create("error", 'Email Vacio')
+    }
     return this._http
       .put<User>(`${this._url}`, newUser)
       .subscribe({
@@ -100,15 +106,17 @@ export class UserService {
           console.log(_data);
         },
         error: (err) => {
-          this.nzMessageService.create("error", `ERROR al modificar el usuario`);
+          this.getUsers()
+          if (err.error.err.codeName === 'DuplicateKey') {
+            this.nzMessageService.create("error", 'Email Duplicado')
+          }
+          else this.nzMessageService.create("error", 'ERROR al modificar usuario')
           console.log(err);
         }
       });
   }
 
   public deleteUser(_id: any) {
-    console.log('mi id: ', _id);
-
     return this._http
       .delete<User>(`${this._url}/${_id}`)
       .subscribe({

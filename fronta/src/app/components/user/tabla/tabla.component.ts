@@ -1,15 +1,16 @@
 import { Component, inject } from '@angular/core';
-
-import { NzTableModule } from 'ng-zorro-antd/table';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { RouterOutlet } from '@angular/router';
+
+import { NzTableModule } from 'ng-zorro-antd/table';
 import { NzPopconfirmModule } from 'ng-zorro-antd/popconfirm';
 import { NzPopoverModule } from 'ng-zorro-antd/popover';
-import { RouterOutlet } from '@angular/router';
-import { User, newUser } from '../../../shared/models/user';
 import { NzFormModule } from 'ng-zorro-antd/form';
 
+import { User } from '../../../shared/models/user';
 import { UserService } from '../../../services/user.service'
+import { ValidationErrors } from '../../../shared/validtors';
 
 @Component({
   selector: 'app-tabla-user',
@@ -30,41 +31,29 @@ import { UserService } from '../../../services/user.service'
 export class TablaComponentUs {
 
   private readonly userService = inject(UserService);
+  private readonly validationErrors = inject(ValidationErrors)
   users = this.userService.users;
 
   i = 0;
   editId: String | null = null;
-  listOfData: User[] = [];
+
 
   startEdit(data: any): void {
     this.editId = data._id;
+    console.log('start: ', this.validationErrors.founded(data.email));
   }
   stopEdit(data: any): void {
     this.editId = null;
-    const user = this.userService.putUser(data)
+    console.log('stop: ', this.validationErrors.founded(data.email));
+    this.userService.putUser(data)
   }
   addRow(): void {
-    this.listOfData = [
-      ...this.listOfData,
-      {
-        _id: "",
-        nameUser: '',
-        email: '',
-        pass: '',
-        role: {
-          admin: false,
-          seller: false
-        },
-        active: false,
-      }
-    ];
-    this.i++;
+
   }
 
   deleteRow(_id: String): void {
-    this.users.update(((users: User[]) => users.filter((user: User) => user.email !== _id)));
+    this.users.update(((users: User[]) => users.filter((user: User) => user._id !== _id)));
     const user = this.userService.deleteUser(_id)
-
   }
 
   onCheckboxChange(event: any, data: any, place: String): void {

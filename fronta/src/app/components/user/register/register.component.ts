@@ -40,6 +40,7 @@ export class RegisterComponent {
 
 
   submitForm(): void {
+
     const user = this.userService.registerUser(this.validateForm.value)
     this.validateForm.reset();
     console.log('submit', this.validateForm.value);
