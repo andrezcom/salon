@@ -9,10 +9,13 @@ import { registerLocaleData } from '@angular/common';
 import es from '@angular/common/locales/es';
 import { FormsModule } from '@angular/forms';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
-import { provideHttpClient, withFetch } from '@angular/common/http';
-
+import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 registerLocaleData(es);
+import { exampleInterceptor } from './core/interceptors/user.interceptor'
 
 export const appConfig: ApplicationConfig = {
-  providers: [provideRouter(routes), provideClientHydration(), provideNzIcons(), provideNzI18n(es_ES), importProvidersFrom(FormsModule), provideAnimationsAsync(), provideHttpClient(withFetch())]
+  providers: [provideRouter(routes), provideClientHydration(), provideNzIcons(), provideNzI18n(es_ES), importProvidersFrom(FormsModule), provideAnimationsAsync(), provideHttpClient(withFetch(), withInterceptors([
+    exampleInterceptor
+  ])
+  )]
 };

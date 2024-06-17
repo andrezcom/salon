@@ -11,5 +11,5 @@ import { JsonPipe } from '@angular/common';
 })
 export class ListaComponent {
   private readonly userService = inject(UserService);
-  users = this.userService.users;
+  users = this.userService.getUsers();
 }

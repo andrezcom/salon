@@ -10,7 +10,6 @@ import { NzFormModule } from 'ng-zorro-antd/form';
 
 import { User } from '../../../shared/models/user';
 import { UserService } from '../../../services/user.service'
-import { ValidateErrors } from '../../../shared/validtors';
 
 @Component({
   selector: 'app-tabla-user',
@@ -49,12 +48,12 @@ export class TablaComponentUs {
 
   }
 
-  deleteRow(_id: String): void {
+  deleteRow(_id: string): void {
     this.users.update(((users: User[]) => users.filter((user: User) => user._id !== _id)));
     const user = this.userService.deleteUser(_id)
   }
 
-  onCheckboxChange(event: any, data: any, place: String): void {
+  onCheckboxChange(event: any, data: any, place: string): void {
     // Comprueba si la casilla de verificación fue marcada o desmarcada
     const isChecked = event.target.checked;
     if (place === 'admin') data.role.admin = isChecked;
