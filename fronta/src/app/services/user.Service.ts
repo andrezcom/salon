@@ -7,6 +7,8 @@ import { newUser } from "../shared/models/user";
 
 import { NzMessageService } from 'ng-zorro-antd/message'
 
+import { ValidateErrors } from '../shared/validtors';
+
 @Injectable({ providedIn: 'root' })
 
 export class UserService {
@@ -15,6 +17,7 @@ export class UserService {
   private readonly _http = inject(HttpClient);
   private readonly _url = environment.url;
   private readonly nzMessageService = inject(NzMessageService);
+  private readonly validateErrors = inject(ValidateErrors);
 
   constructor() {
     this.getUsers()
@@ -72,7 +75,7 @@ export class UserService {
       });
   }
 
-  public putUser(user: any) {
+  public putUser(user: User) {
     let newUser: User = {
       _id: user._id,
       nameUser: user.nameUser,
@@ -85,9 +88,7 @@ export class UserService {
       active: user.active
     };
 
-    let mailValido = false;
-    let EMAIL_REGEX = /^[a-zA-Z0-9.!#$%&’+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)$/;
-    if (!newUser.email.match(EMAIL_REGEX)) {
+    if (!this.validateErrors.validatorEmail(newUser.email)) {
       this.getUsers()
       return this.nzMessageService.create("error", 'Email invalido')
     }
@@ -113,7 +114,7 @@ export class UserService {
       });
   }
 
-  public deleteUser(_id: any) {
+  public deleteUser(_id: string) {
     return this._http
       .delete<User>(`${this._url}/${_id}`)
       .subscribe({
