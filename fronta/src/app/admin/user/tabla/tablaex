@@ -6,7 +6,7 @@ import { NzPopconfirmModule } from 'ng-zorro-antd/popconfirm';
 import { NzPopoverModule } from 'ng-zorro-antd/popover';
 import { User } from '../../../shared/models/user';
 
-import { UserService } from '../../../services/user.service'
+import { UserService } from '../../../core/services/user.service'
 
 
 @Component({

@@ -19,13 +19,14 @@
             <div class="editable-cell" [hidden]="editId === data._id" (click)="startEdit(data)">
               {{ data.nameUser }}
             </div>
-            <input [hidden]="editId !== data._id" type="text" nz-input [(ngModel)]="data.nameUser" (blur)="stopEdit(data)" />
+            <input [hidden]="editId !== data._id" type="text" [ngModel]="data.nameUser | sanitizar" nz-input [(ngModel)]="data.nameUser" (blur)="stopEdit(data)" />
+            
           </td>
           <td>
             <div class="editable-cell" [hidden]="editId === data._id" (click)="startEdit(data)">
               {{ data.email }}
             </div>
-            <input [hidden]="editId !== data._id" type="text" nz-input [(ngModel)]="data.email" (blur)="stopEdit(data)" />
+            <input [hidden]="editId !== data._id" type="text" nz-input [ngModel]="data.email | sanitizar" [(ngModel)]="data.email" (blur)="stopEdit(data)" />
           </td>
           <td
           [nzChecked]= "data.role.admin" (change)="onCheckboxChange($event, data, 'admin')"

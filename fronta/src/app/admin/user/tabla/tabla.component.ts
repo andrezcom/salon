@@ -9,12 +9,15 @@ import { NzPopoverModule } from 'ng-zorro-antd/popover';
 import { NzFormModule } from 'ng-zorro-antd/form';
 
 import { User } from '../../../shared/models/user';
-import { UserService } from '../../../services/user.service'
+import { UserService } from '../../../core/services/user.service'
+
+import { InputPipe } from '../../../core/pipes/input.pipe'
 
 @Component({
   selector: 'app-tabla-user',
   standalone: true,
   imports: [
+    InputPipe,
     NzFormModule,
     NzTableModule,
     FormsModule,

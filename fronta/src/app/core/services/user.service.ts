@@ -1,13 +1,13 @@
-import { environment } from "../../environments/environment";
+import { environment } from "../../../environments/environment";
 import { Injectable, inject, signal } from "@angular/core";
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { tap } from "rxjs";
-import { User } from "../shared/models/user";
-import { newUser } from "../shared/models/user";
+import { User } from "../../shared/models/user";
+import { newUser } from "../../shared/models/user";
 
 import { NzMessageService } from 'ng-zorro-antd/message'
 
-import { ValidateErrors } from '../shared/validtors';
+import { ValidateErrors } from '../../shared/validtors';
 
 @Injectable({ providedIn: 'root' })
 

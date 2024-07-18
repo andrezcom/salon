@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { FormControl, FormGroup, NonNullableFormBuilder, Validators } from '@angular/forms';
-import { UserService } from '../../../services/user.service'
+import { UserService } from '../../core/services/user.service'
 
 import { NzCheckboxModule } from 'ng-zorro-antd/checkbox';
 import { NzInputModule } from 'ng-zorro-antd/input';
@@ -57,5 +57,8 @@ export class LoginComponent {
     }
   }
 
+  logOut() {
+    localStorage.removeItem('token')
+  }
   constructor(private fb: NonNullableFormBuilder) { }
 }

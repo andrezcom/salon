@@ -6,32 +6,51 @@
     [(nzCollapsed)]="isCollapsed"
     [nzTrigger]="null">
     <div class="sidebar-logo">
-      <a href="https://ng.ant.design/" target="_blank">
+      <a href="" target="_blank">
         <img src="../assets/logob.png" alt="logo">
         <h1>Salon's Software</h1>
       </a>
     </div>
     <ul nz-menu nzTheme="dark" nzMode="inline" [nzInlineCollapsed]="isCollapsed">
-      <li nz-submenu nzOpen nzTitle="Dashboard" nzIcon="dashboard">
+      <li nz-submenu nzOpen nzTitle="Usuarios" nzIcon="user">
         <ul>
           <li nz-menu-item nzMatchRouter>
             <a routerLink="welcome">Welcome</a>
           </li>
           <li nz-menu-item nzMatchRouter>
-            <a routerLink="user">Users</a>
+            <a routerLink="admin/user">Users</a>
           </li>
           <li nz-menu-item nzMatchRouter>
-            <a routerLink="login">Login</a>
+            <a routerLink="admin/login">Login</a>
           </li>
           <li nz-menu-item nzMatchRouter>
-            <a routerLink="register">Register</a>
+            <a routerLink="admin/register">Register</a>
           </li>
           <li nz-menu-item nzMatchRouter>
-            <a routerLink="lista">Lista</a>
+            <a routerLink="admin/lista">Lista</a>
           </li>
         </ul>
       </li>
-      <li nz-submenu nzOpen nzTitle="Form" nzIcon="form">
+      <li nz-submenu nzOpen nzTitle="Proveedores" nzIcon="user">
+        <ul>
+          <li nz-menu-item nzMatchRouter>
+            <a routerLink="welcome">Welcome</a>
+          </li>
+          <li nz-menu-item nzMatchRouter>
+            <a routerLink="admin/user">Users</a>
+          </li>
+          <li nz-menu-item nzMatchRouter>
+            <a routerLink="admin/login">Login</a>
+          </li>
+          <li nz-menu-item nzMatchRouter>
+            <a routerLink="admin/register">Register</a>
+          </li>
+          <li nz-menu-item nzMatchRouter>
+            <a routerLink="admin/lista">Lista</a>
+          </li>
+        </ul>
+      </li>
+      <li nz-submenu nzOpen nzTitle="Formas" nzIcon="form">
         <ul>
           <li nz-menu-item nzMatchRouter>
             <a>Basic Form</a>

@@ -1,19 +1,17 @@
 import { Component, inject } from '@angular/core';
-import { UserService } from '../../../services/user.service';
-
+import { UserService } from '../../../core/services/user.service';
+import { InputPipe } from '../../../core/pipes/input.pipe';
+import { sanitizer, validpass } from '../../../core/validators/validators'
 import {
   AbstractControl,
-  AsyncValidatorFn,
   FormControl,
   FormGroup,
   NonNullableFormBuilder,
-  ValidationErrors,
   ValidatorFn,
   Validators
 } from '@angular/forms';
 
 import { NzCheckboxModule } from 'ng-zorro-antd/checkbox';
-import { Observable, Observer } from 'rxjs';
 import { NzInputModule } from 'ng-zorro-antd/input';
 import { NzFormModule } from 'ng-zorro-antd/form';
 import { ReactiveFormsModule } from '@angular/forms';
@@ -21,10 +19,9 @@ import { ReactiveFormsModule } from '@angular/forms';
 @Component({
   selector: 'app-register',
   templateUrl: './register.component.html',
-
   styleUrls: ['./register.component.css'],
   standalone: true,
-  imports: [NzCheckboxModule, ReactiveFormsModule, NzInputModule, NzFormModule]
+  imports: [NzCheckboxModule, ReactiveFormsModule, NzInputModule, NzFormModule, InputPipe]
 })
 export class RegisterComponent {
   validateForm: FormGroup<{
@@ -35,6 +32,7 @@ export class RegisterComponent {
     admin: FormControl<boolean>;
     seller: FormControl<boolean>;
   }>;
+
 
   private readonly userService = inject(UserService);
 
@@ -54,18 +52,7 @@ export class RegisterComponent {
     setTimeout(() => this.validateForm.controls.confirm.updateValueAndValidity());
   }
 
-  userNameAsyncValidator: AsyncValidatorFn = (control: AbstractControl) =>
-    new Observable((observer: Observer<ValidationErrors | null>) => {
-      setTimeout(() => {
-        if (control.value === 'JasonWood') {
-          // you have to return `{error: true}` to mark it as an error event
-          observer.next({ error: true, duplicated: true });
-        } else {
-          observer.next(null);
-        }
-        observer.complete();
-      }, 1000);
-    });
+
 
   confirmValidator: ValidatorFn = (control: AbstractControl) => {
     if (!control.value) {
@@ -78,10 +65,10 @@ export class RegisterComponent {
 
   constructor(private fb: NonNullableFormBuilder) {
     this.validateForm = this.fb.group({
-      nameUser: ['', [Validators.required], [this.userNameAsyncValidator]],
-      email: ['', [Validators.email, Validators.required]],
-      pass: ['', [Validators.required]],
-      confirm: ['', [this.confirmValidator]],
+      nameUser: ['', [Validators.required, sanitizer()]],
+      email: ['', [Validators.email, Validators.required, sanitizer()]],
+      pass: ['', [Validators.required, sanitizer()]],
+      confirm: ['', [this.confirmValidator, sanitizer(), validpass()]],
       admin: [false],
       seller: [false]
     });

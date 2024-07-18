@@ -3,13 +3,13 @@
       <nz-form-item>
         <nz-form-label [nzSpan]="7" nzRequired>Username</nz-form-label>
         <nz-form-control [nzSpan]="12" nzHasFeedback nzValidatingTip="Validating..." [nzErrorTip]="userErrorTpl">
-          <input nz-input formControlName="nameUser" placeholder="Usuario requerido" />
+          <input nz-input formControlName="nameUser" placeholder="Usuario requerido"/>
           <ng-template #userErrorTpl let-control>
             @if (control.errors?.['required']) {
               Por favor ingrese usuario!
             }
-            @if (control.errors?.['duplicated']) {
-              Usuario duplicado!
+            @if (control.errors?.['invalid']) {
+              Caracteres invalidos!
             }
           </ng-template>
         </nz-form-control>
@@ -24,6 +24,9 @@
             }
             @if (control.errors?.['required']) {
               ingrese E-mail de usuario!
+            }
+            @if (control.errors?.['invalid']) {
+              Caracteres invalidos!
             }
           </ng-template>
         </nz-form-control>
@@ -44,6 +47,9 @@
             }
             @if (control.errors?.['confirm']) {
               Password is inconsistent!
+            }
+            @if (control.errors?.['invalid']) {
+              Caracteres invalidos!
             }
           </ng-template>
         </nz-form-control>
