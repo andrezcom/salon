@@ -426,6 +426,166 @@ class DatabaseManager {
       // Crear los nuevos modelos
       connection.model('CashBalance', cashBalanceSchema);
       connection.model('AccountReceivable', accountReceivableSchema);
+      
+      // Modelo de expertos con sistema de comisiones
+      const expertCommissionSchema = new mongoose.Schema({
+        nameExpert: { type: String, required: true, trim: true },
+        aliasExpert: { type: String, required: true, trim: true },
+        email: { type: String, required: true, unique: true, trim: true, lowercase: true },
+        phone: { type: String, required: true, trim: true },
+        role: {
+          stylist: { type: Boolean, default: false },
+          manicure: { type: Boolean, default: false },
+          makeup: { type: Boolean, default: false }
+        },
+        commissionSettings: {
+          serviceCommission: { type: Number, required: true, min: 0, max: 100, default: 20 },
+          retailCommission: { type: Number, required: true, min: 0, max: 100, default: 10 },
+          serviceCalculationMethod: { type: String, enum: ['before_inputs', 'after_inputs'], default: 'after_inputs', required: true },
+          minimumServiceCommission: { type: Number, required: true, min: 0, default: 5 },
+          maximumServiceCommission: { type: Number, required: false, min: 0 }
+        },
+        active: { type: Boolean, default: true },
+        businessId: { type: String, required: false },
+        hireDate: { type: Date, default: Date.now },
+        notes: { type: String, required: false },
+        createdAt: { type: Date, default: Date.now },
+        updatedAt: { type: Date, default: Date.now }
+      });
+      
+      // Modelo de comisiones
+      const commissionSchema = new mongoose.Schema({
+        businessId: { type: String, required: true },
+        expertId: { type: String, required: true },
+        saleId: { type: String, required: true },
+        commissionType: { type: String, enum: ['service', 'retail', 'exceptional'], required: true },
+        serviceId: { type: Number, required: false },
+        retailId: { type: String, required: false },
+        baseAmount: { type: Number, required: true, min: 0 },
+        inputCosts: { type: Number, required: false, min: 0, default: 0 },
+        netAmount: { type: Number, required: true, min: 0 },
+        baseCommissionRate: { type: Number, required: true, min: 0, max: 100 },
+        appliedCommissionRate: { type: Number, required: true, min: 0, max: 100 },
+        commissionAmount: { type: Number, required: true, min: 0 },
+        exceptionalEvent: {
+          reason: { type: String, required: false },
+          adjustmentType: { type: String, enum: ['increase', 'decrease'], required: false },
+          adjustmentAmount: { type: Number, required: false, min: 0 },
+          adjustmentPercentage: { type: Number, required: false, min: 0, max: 100 },
+          approvedBy: { type: String, required: false },
+          approvalDate: { type: Date, required: false },
+          notes: { type: String, required: false }
+        },
+        status: { type: String, enum: ['pending', 'approved', 'paid', 'cancelled'], default: 'pending', required: true },
+        paymentDate: { type: Date, required: false },
+        paymentMethod: { type: String, required: false },
+        paymentNotes: { type: String, required: false },
+        createdBy: { type: String, required: true },
+        updatedBy: { type: String, required: true },
+        createdAt: { type: Date, default: Date.now },
+        updatedAt: { type: Date, default: Date.now }
+      });
+      
+      // Crear los modelos
+      connection.model('Expert', expertCommissionSchema);
+      connection.model('Commission', commissionSchema);
+      
+      // Modelo de transacciones de caja
+      const cashTransactionSchema = new mongoose.Schema({
+        businessId: { type: String, required: true },
+        saleId: { type: String, required: true },
+        transactionType: { type: String, enum: ['tip', 'change', 'refund', 'adjustment'], required: true },
+        amount: { type: Number, required: true, min: 0 },
+        previousBalance: { type: Number, required: true },
+        newBalance: { type: Number, required: true },
+        paymentMethod: { type: String, enum: ['cash', 'card', 'transfer'], required: true },
+        originalPaymentMethod: { type: String, enum: ['cash', 'card', 'transfer'], required: true },
+        tipDetails: {
+          tipAmount: { type: Number, required: false, min: 0 },
+          tipPercentage: { type: Number, required: false, min: 0, max: 100 },
+          tipReason: { type: String, required: false },
+          tipRecipient: { type: String, required: false }
+        },
+        changeDetails: {
+          changeAmount: { type: Number, required: false, min: 0 },
+          changeReason: { type: String, required: false },
+          changeNotes: { type: String, required: false },
+          originalAmount: { type: Number, required: false, min: 0 }
+        },
+        refundDetails: {
+          refundAmount: { type: Number, required: false, min: 0 },
+          refundReason: { type: String, required: false },
+          refundMethod: { type: String, enum: ['cash', 'card', 'transfer'], required: false },
+          refundNotes: { type: String, required: false },
+          originalPaymentDate: { type: Date, required: false }
+        },
+        adjustmentDetails: {
+          adjustmentType: { type: String, enum: ['increase', 'decrease'], required: false },
+          adjustmentReason: { type: String, required: false },
+          adjustmentNotes: { type: String, required: false },
+          approvedBy: { type: String, required: false }
+        },
+        status: { type: String, enum: ['pending', 'completed', 'cancelled', 'reversed'], default: 'pending', required: true },
+        createdBy: { type: String, required: true },
+        approvedBy: { type: String, required: false },
+        approvedAt: { type: Date, required: false },
+        reversedBy: { type: String, required: false },
+        reversedAt: { type: Date, required: false },
+        reversalReason: { type: String, required: false },
+        notes: { type: String, required: false },
+        createdAt: { type: Date, default: Date.now },
+        updatedAt: { type: Date, default: Date.now }
+      });
+      
+      // Crear el modelo de transacciones de caja
+      connection.model('CashTransaction', cashTransactionSchema);
+      
+      // Modelo de anticipos
+      const advanceSchema = new mongoose.Schema({
+        businessId: { type: String, required: true },
+        expertId: { type: String, required: true },
+        advanceType: { type: String, enum: ['advance', 'loan', 'bonus', 'expense_reimbursement'], required: true },
+        amount: { type: Number, required: true, min: 0 },
+        requestedAmount: { type: Number, required: true, min: 0 },
+        approvedAmount: { type: Number, required: false, min: 0 },
+        status: { type: String, enum: ['pending', 'approved', 'paid', 'rejected', 'cancelled', 'repaid'], default: 'pending', required: true },
+        reason: { type: String, required: true, trim: true },
+        description: { type: String, required: false, trim: true },
+        category: { type: String, enum: ['personal', 'business', 'emergency', 'bonus'], required: false, default: 'personal' },
+        requestDate: { type: Date, required: true, default: Date.now },
+        approvalDate: { type: Date, required: false },
+        paymentDate: { type: Date, required: false },
+        dueDate: { type: Date, required: false },
+        repaymentDate: { type: Date, required: false },
+        requestedBy: { type: String, required: true },
+        approvedBy: { type: String, required: false },
+        rejectedBy: { type: String, required: false },
+        rejectionReason: { type: String, required: false },
+        paymentMethod: { type: String, enum: ['cash', 'transfer', 'check'], required: false },
+        paymentNotes: { type: String, required: false },
+        isLoan: { type: Boolean, default: false },
+        interestRate: { type: Number, required: false, min: 0, max: 100 },
+        expenseReceipts: [{
+          receiptNumber: { type: String, required: true },
+          amount: { type: Number, required: true, min: 0 },
+          description: { type: String, required: true },
+          date: { type: Date, required: true }
+        }],
+        commissionDeductions: [{
+          commissionId: { type: String, required: true },
+          amount: { type: Number, required: true, min: 0 },
+          date: { type: Date, required: true },
+          description: { type: String, required: true }
+        }],
+        remainingBalance: { type: Number, required: true, min: 0, default: 0 },
+        notes: { type: String, required: false },
+        internalNotes: { type: String, required: false },
+        createdAt: { type: Date, default: Date.now },
+        updatedAt: { type: Date, default: Date.now }
+      });
+      
+      // Crear el modelo de anticipos
+      connection.model('Advance', advanceSchema);
 
       console.log(`✅ Colecciones inicializadas para el negocio: ${businessId}`);
 

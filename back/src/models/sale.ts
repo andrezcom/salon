@@ -39,6 +39,22 @@ export interface ISale extends Document {
     payment: string;
     amount: number;
   }>;
+  
+  // Sistema de propinas y devoluciones
+  tipAndChange?: {
+    tipAmount: number; // Monto de la propina
+    tipPaymentMethod: 'cash' | 'card' | 'transfer'; // Método de pago de la propina
+    changeAmount: number; // Monto de devolución en efectivo
+    changeReason?: string; // Razón de la devolución
+    tipNotes?: string; // Notas sobre la propina
+    changeNotes?: string; // Notas sobre la devolución
+  };
+  
+  // Total real recibido (incluyendo propinas)
+  totalReceived: number;
+  
+  // Total a devolver (si hay cambio)
+  totalChange: number;
   // Nuevos campos para el sistema de facturación
   status: SaleStatus;
   invoiceNumber?: number; // Número de factura (solo cuando está cerrada)
@@ -46,6 +62,31 @@ export interface ISale extends Document {
   notes?: string; // Notas adicionales
   closedAt?: Date; // Fecha de cierre
   closedBy?: string; // Usuario que cerró la transacción
+  
+  // Sistema de comisiones
+  commissions?: Array<{
+    expertId: string;
+    commissionType: 'service' | 'retail' | 'exceptional';
+    serviceId?: number;
+    retailId?: string;
+    baseAmount: number;
+    inputCosts?: number;
+    netAmount: number;
+    baseCommissionRate: number;
+    appliedCommissionRate: number;
+    commissionAmount: number;
+    status: 'pending' | 'approved' | 'paid' | 'cancelled';
+    exceptionalEvent?: {
+      reason: string;
+      adjustmentType: 'increase' | 'decrease';
+      adjustmentAmount: number;
+      adjustmentPercentage?: number;
+      approvedBy: string;
+      approvalDate: Date;
+      notes?: string;
+    };
+  }>;
+  
   createdAt: Date;
   updatedAt: Date;
 }
@@ -127,7 +168,7 @@ const saleSchema = new Schema<ISale>({
   }],
   total: {
     type: Number,
-    required: true
+      required: true
   },
   paymentMethod: [{
     payment: {
@@ -139,6 +180,57 @@ const saleSchema = new Schema<ISale>({
       required: true
     }
   }],
+  
+  // Sistema de propinas y devoluciones
+  tipAndChange: {
+    tipAmount: {
+      type: Number,
+      required: false,
+      min: 0,
+      default: 0
+    },
+    tipPaymentMethod: {
+      type: String,
+      enum: ['cash', 'card', 'transfer'],
+      required: false,
+      default: 'cash'
+    },
+    changeAmount: {
+      type: Number,
+      required: false,
+      min: 0,
+      default: 0
+    },
+    changeReason: {
+      type: String,
+      required: false
+    },
+    tipNotes: {
+      type: String,
+      required: false
+    },
+    changeNotes: {
+      type: String,
+      required: false
+    }
+  },
+  
+  // Total real recibido (incluyendo propinas)
+  totalReceived: {
+    type: Number,
+    required: false,
+    min: 0,
+    default: 0
+  },
+  
+  // Total a devolver (si hay cambio)
+  totalChange: {
+    type: Number,
+    required: false,
+    min: 0,
+    default: 0
+  },
+  
   // Nuevos campos para el sistema de facturación
   status: {
     type: String,
@@ -167,7 +259,89 @@ const saleSchema = new Schema<ISale>({
   closedBy: {
     type: String,
     required: false
-  }
+  },
+  
+  // Sistema de comisiones
+  commissions: [{
+    expertId: {
+      type: String,
+      required: false
+    },
+    commissionType: {
+      type: String,
+      enum: ['service', 'retail', 'exceptional'],
+      required: false
+    },
+    serviceId: {
+      type: Number,
+      required: false
+    },
+    retailId: {
+      type: String,
+      required: false
+    },
+    baseAmount: {
+      type: Number,
+      required: false
+    },
+    inputCosts: {
+      type: Number,
+      required: false
+    },
+    netAmount: {
+      type: Number,
+      required: false
+    },
+    baseCommissionRate: {
+      type: Number,
+      required: false
+    },
+    appliedCommissionRate: {
+      type: Number,
+      required: false
+    },
+    commissionAmount: {
+      type: Number,
+      required: false
+    },
+    status: {
+      type: String,
+      enum: ['pending', 'approved', 'paid', 'cancelled'],
+      default: 'pending',
+      required: false
+    },
+    exceptionalEvent: {
+      reason: {
+        type: String,
+        required: false
+      },
+      adjustmentType: {
+        type: String,
+        enum: ['increase', 'decrease'],
+        required: false
+      },
+      adjustmentAmount: {
+        type: Number,
+        required: false
+      },
+      adjustmentPercentage: {
+        type: Number,
+        required: false
+      },
+      approvedBy: {
+        type: String,
+        required: false
+      },
+      approvalDate: {
+        type: Date,
+        required: false
+      },
+      notes: {
+        type: String,
+        required: false
+      }
+    }
+  }]
 }, {
   timestamps: true
 });
@@ -227,6 +401,98 @@ saleSchema.methods.closeTransaction = async function(userId: string, notes?: str
   this.closedAt = new Date();
   this.closedBy = userId;
   if (notes) this.notes = notes;
+  
+  await this.save();
+};
+
+// Método de instancia para calcular comisiones
+saleSchema.methods.calculateCommissions = async function(): Promise<void> {
+  if (!this.businessId) {
+    throw new Error('No se puede calcular comisiones sin businessId');
+  }
+  
+  // Limpiar comisiones existentes
+  this.commissions = [];
+  
+  // Calcular comisiones por servicios
+  for (const service of this.services) {
+    try {
+      // Obtener información del experto
+      const Expert = mongoose.model('Expert');
+      const expert = await Expert.findOne({ 
+        businessId: this.businessId,
+        expertId: service.expertId.toString()
+      });
+      
+      if (expert) {
+        // Calcular costos de insumos
+        const inputCosts = service.input.reduce((total: number, input: any) => total + input.amount, 0);
+        
+        // Calcular comisión base
+        const baseCommissionRate = expert.commissionSettings.serviceCommission;
+        const appliedCommissionRate = baseCommissionRate;
+        
+        // Calcular monto neto según método de cálculo
+        let netAmount = service.amount;
+        if (expert.commissionSettings.serviceCalculationMethod === 'after_inputs') {
+          netAmount = service.amount - inputCosts;
+        }
+        
+        // Calcular comisión
+        const commissionAmount = expert.calculateServiceCommission(service.amount, inputCosts);
+        
+        // Agregar comisión a la venta
+        this.commissions.push({
+          expertId: expert._id.toString(),
+          commissionType: 'service',
+          serviceId: service.serviceId,
+          baseAmount: service.amount,
+          inputCosts,
+          netAmount,
+          baseCommissionRate,
+          appliedCommissionRate,
+          commissionAmount,
+          status: 'pending'
+        });
+      }
+    } catch (error) {
+      console.error(`Error calculando comisión para servicio ${service.serviceId}:`, error);
+    }
+  }
+  
+  // Calcular comisiones por retail
+  for (const retail of this.retail) {
+    try {
+      // Obtener información del experto
+      const Expert = mongoose.model('Expert');
+      const expert = await Expert.findOne({ 
+        businessId: this.businessId,
+        expertId: retail.expertId.toString()
+      });
+      
+      if (expert) {
+        // Calcular comisión por retail
+        const baseCommissionRate = expert.commissionSettings.retailCommission;
+        const appliedCommissionRate = baseCommissionRate;
+        const commissionAmount = expert.calculateRetailCommission(retail.amount);
+        
+        // Agregar comisión a la venta
+        this.commissions.push({
+          expertId: expert._id.toString(),
+          commissionType: 'retail',
+          retailId: retail.productId.toString(),
+          baseAmount: retail.amount,
+          netAmount: retail.amount,
+          baseCommissionRate,
+          appliedCommissionRate,
+          commissionAmount,
+          status: 'pending'
+        });
+      }
+    } catch (error) {
+      console.error(`Error calculando comisión para retail ${retail.productId}:`, error);
+    }
+  }
   
   await this.save();
 };
