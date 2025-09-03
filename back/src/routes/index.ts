@@ -9,6 +9,8 @@ import serviceRouter from './service'
 import paymentRouter from './payment'
 import providerRouter from './provider'
 import saleRouter from './sale'
+import businessRouter from './business'
+import cashBalanceRouter from './cashBalance'
 
 const router = express.Router();
 router.use('/auth', authRouter)
@@ -20,5 +22,7 @@ router.use('/service', serviceRouter)
 router.use('/payment', paymentRouter)
 router.use('/provider', providerRouter)
 router.use('/sale', saleRouter)
+router.use('/business', businessRouter)
+router.use('/cash-balance', cashBalanceRouter)
 
 export default router

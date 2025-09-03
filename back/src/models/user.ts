@@ -18,8 +18,17 @@ const userSchema = new Schema({
     admin: Boolean,
     seller: Boolean
   },
-  active: Boolean
-
+  active: Boolean,
+  businesses: [{
+    type: Schema.Types.ObjectId,
+    ref: 'Business'
+  }],
+  defaultBusiness: {
+    type: Schema.Types.ObjectId,
+    ref: 'Business'
+  }
+}, {
+  timestamps: true
 })
 
 export default model('User', userSchema)
