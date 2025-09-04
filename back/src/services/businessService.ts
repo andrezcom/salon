@@ -1,4 +1,5 @@
 import databaseManager from './databaseManager';
+import Person from '../models/person';
 import { Request } from 'express';
 
 export interface BusinessRequest extends Request {
@@ -197,7 +198,7 @@ export class BusinessService {
   static async getClients(businessId: string, filters: any = {}) {
     return this.executeInBusinessContext(businessId, async (connection) => {
       const Client = connection.model('Client');
-      return await Client.find({ ...filters, businessId }).sort({ createdAt: -1 });
+      return await Person.find({ ...filters, personType: 'client', active: true }).sort({ createdAt: -1 });
     });
   }
 
@@ -217,7 +218,7 @@ export class BusinessService {
   static async getExperts(businessId: string, filters: any = {}) {
     return this.executeInBusinessContext(businessId, async (connection) => {
       const Expert = connection.model('Expert');
-      return await Expert.find({ ...filters, businessId }).sort({ createdAt: -1 });
+      return await Person.find({ ...filters, personType: 'expert', active: true }).sort({ createdAt: -1 });
     });
   }
 

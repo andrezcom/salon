@@ -58,34 +58,46 @@ export interface User {
 }
 
 export interface Sale {
-  idClient: String,
-  nameClient: String,
-  email: String,
+  idClient: string,
+  nameClient: string,
+  email: string,
   date: Date,
-  services: [{
-    serviceId: Number,
-    expertId: Number,
-    input: [{
-      inputId: Number,
-      nameProduct: String,
-      inputPrice: Number,
-      qty: Number,
-      amount: Number,
-    }],
-    amount: Number,
-  }],
-  retail: [{
-    productId: Number,
-    clientPrice: Number,
-    qty: Number,
-    amount: Number,
-    expertId: Number,
-  }],
-  total: Number,
-  paymentMethod: [{
-    payment: String,
-    amount: Number,
-  }],
+  services: Array<{
+    serviceId: number,
+    expertId: string, // ObjectId referenciando Person
+    input: Array<{
+      inputId: number,
+      nameProduct: string,
+      inputPrice: number,
+      qty: number,
+      amount: number,
+    }>,
+    amount: number,
+  }>,
+  retail: Array<{
+    productId: number,
+    clientPrice: number,
+    qty: number,
+    amount: number,
+    expertId: string, // ObjectId referenciando Person
+  }>,
+  total: number,
+  paymentMethod: Array<{
+    payment: string,
+    amount: number,
+  }>,
+  tipAndChange?: {
+    tipAmount: number,
+    tipPaymentMethod: 'cash' | 'card' | 'transfer',
+    changeAmount: number,
+    changeReason?: string,
+    tipNotes?: string,
+    changeNotes?: string,
+  },
+  businessId: string,
+  status: 'completed' | 'pending' | 'cancelled',
+  createdBy: string,
+  active: boolean
 }
 
 export interface Service {

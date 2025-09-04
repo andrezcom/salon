@@ -70,18 +70,7 @@ class DatabaseManager {
    */
   private async initializeBusinessCollections(connection: mongoose.Connection, businessId: string) {
     try {
-      // Esquema de clientes (adaptado a tu estructura actual)
-      const clientSchema = new mongoose.Schema({
-        nameClient: { type: String, required: true },
-        email: { type: String, required: true },
-        phone1: { type: String, required: true },
-        phone2: { type: String, required: false },
-        numberId: { type: String, required: false },
-        businessId: { type: String, default: businessId },
-        active: { type: Boolean, default: true },
-        createdAt: { type: Date, default: Date.now },
-        updatedAt: { type: Date, default: Date.now }
-      });
+      // Los esquemas de clientes, expertos y usuarios han sido unificados en Person
 
       // Esquema de servicios (adaptado a tu estructura actual)
       const serviceSchema = new mongoose.Schema({
@@ -95,18 +84,7 @@ class DatabaseManager {
 
       // Esquema de productos (adaptado a tu estructura actual) - ELIMINADO, usando el nuevo esquema
 
-      // Esquema de expertos (adaptado a tu estructura actual)
-      const expertSchema = new mongoose.Schema({
-        id: { type: Number, required: true },
-        name: { type: String, required: true },
-        email: { type: String, required: true },
-        document: { type: Number, required: true },
-        movil: { type: String, required: true },
-        businessId: { type: String, default: businessId },
-        active: { type: Boolean, default: true },
-        createdAt: { type: Date, default: Date.now },
-        updatedAt: { type: Date, default: Date.now }
-      });
+      // Los esquemas de expertos han sido unificados en Person
 
       // Esquema de proveedores (adaptado a tu estructura actual)
       const providerSchema = new mongoose.Schema({
@@ -188,10 +166,9 @@ class DatabaseManager {
       saleSchema.index({ date: -1 });
 
       // Crear modelos en la nueva base de datos
-      connection.model('Client', clientSchema);
       connection.model('Service', serviceSchema);
       // Product se crea más abajo con el nuevo esquema
-      connection.model('Expert', expertSchema);
+      // Los modelos User, Expert y Client han sido unificados en Person
       connection.model('Provider', providerSchema);
       connection.model('Payment', paymentSchema);
       connection.model('Sale', saleSchema);

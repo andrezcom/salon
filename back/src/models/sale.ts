@@ -1,4 +1,5 @@
 import mongoose, { Schema, model } from "mongoose";
+import Person from './person';
 const AutoIncrement = require('mongoose-sequence')(mongoose);
 
 // Enum para los estados de la transacción
@@ -17,7 +18,7 @@ export interface ISale extends Document {
   date: Date;
   services: Array<{
     serviceId: number;
-    expertId: number;
+    expertId: string; // Cambiado a string para referenciar Person._id
     input: Array<{
       inputId: number;
       nameProduct: string;
@@ -32,7 +33,7 @@ export interface ISale extends Document {
     clientPrice: number;
     qty: number;
     amount: number;
-    expertId: number;
+    expertId: string; // Cambiado a string para referenciar Person._id
   }>;
   total: number;
   paymentMethod: Array<{
@@ -114,7 +115,8 @@ const saleSchema = new Schema<ISale>({
       required: true
     },
     expertId: {
-      type: Number,
+      type: Schema.Types.ObjectId,
+      ref: 'Person',
       required: true
     },
     input: [{
@@ -418,28 +420,52 @@ saleSchema.methods.calculateCommissions = async function(): Promise<void> {
   for (const service of this.services) {
     try {
       // Obtener información del experto
-      const Expert = mongoose.model('Expert');
-      const expert = await Expert.findOne({ 
-        businessId: this.businessId,
-        expertId: service.expertId.toString()
+      const expert = await Person.findOne({ 
+        _id: service.expertId,
+        personType: 'expert',
+        active: true
       });
       
       if (expert) {
         // Calcular costos de insumos
         const inputCosts = service.input.reduce((total: number, input: any) => total + input.amount, 0);
         
+        // Verificar que el experto tiene configuración de comisiones
+        if (!expert.expertInfo?.commissionSettings) {
+          console.warn(`Experto ${expert._id} no tiene configuración de comisiones`);
+          continue;
+        }
+        
         // Calcular comisión base
-        const baseCommissionRate = expert.commissionSettings.serviceCommission;
+        const baseCommissionRate = expert.expertInfo.commissionSettings.serviceCommission;
         const appliedCommissionRate = baseCommissionRate;
         
         // Calcular monto neto según método de cálculo
         let netAmount = service.amount;
-        if (expert.commissionSettings.serviceCalculationMethod === 'after_inputs') {
+        if (expert.expertInfo.commissionSettings.serviceCalculationMethod === 'after_inputs') {
           netAmount = service.amount - inputCosts;
         }
         
-        // Calcular comisión
-        const commissionAmount = expert.calculateServiceCommission(service.amount, inputCosts);
+        // Calcular comisión según el método configurado
+        let commissionAmount = 0;
+        if (expert.expertInfo.commissionSettings.serviceCalculationMethod === 'before_inputs') {
+          // Comisión sobre el monto total del servicio
+          commissionAmount = (service.amount * expert.expertInfo.commissionSettings.serviceCommission) / 100;
+        } else {
+          // Comisión sobre el monto neto (después de insumos)
+          commissionAmount = (netAmount * expert.expertInfo.commissionSettings.serviceCommission) / 100;
+        }
+        
+        // Aplicar comisión mínima si es necesario
+        if (commissionAmount < expert.expertInfo.commissionSettings.minimumServiceCommission) {
+          commissionAmount = expert.expertInfo.commissionSettings.minimumServiceCommission;
+        }
+        
+        // Aplicar comisión máxima si está configurada
+        if (expert.expertInfo.commissionSettings.maximumServiceCommission && 
+            commissionAmount > expert.expertInfo.commissionSettings.maximumServiceCommission) {
+          commissionAmount = expert.expertInfo.commissionSettings.maximumServiceCommission;
+        }
         
         // Agregar comisión a la venta
         this.commissions.push({
@@ -464,17 +490,17 @@ saleSchema.methods.calculateCommissions = async function(): Promise<void> {
   for (const retail of this.retail) {
     try {
       // Obtener información del experto
-      const Expert = mongoose.model('Expert');
-      const expert = await Expert.findOne({ 
-        businessId: this.businessId,
-        expertId: retail.expertId.toString()
+      const expert = await Person.findOne({ 
+        _id: retail.expertId,
+        personType: 'expert',
+        active: true
       });
       
-      if (expert) {
+      if (expert && expert.expertInfo?.commissionSettings) {
         // Calcular comisión por retail
-        const baseCommissionRate = expert.commissionSettings.retailCommission;
+        const baseCommissionRate = expert.expertInfo.commissionSettings.retailCommission;
         const appliedCommissionRate = baseCommissionRate;
-        const commissionAmount = expert.calculateRetailCommission(retail.amount);
+        const commissionAmount = (retail.amount * expert.expertInfo.commissionSettings.retailCommission) / 100;
         
         // Agregar comisión a la venta
         this.commissions.push({

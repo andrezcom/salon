@@ -1,5 +1,5 @@
 import Commission from '../models/commission';
-import Expert from '../models/expert';
+import Person from '../models/person';
 import Sale from '../models/sale';
 
 export class CommissionService {
@@ -21,9 +21,10 @@ export class CommissionService {
       // Crear comisiones por servicios
       for (const service of sale.services) {
         try {
-          const expert = await Expert.findOne({ 
-            businessId, 
-            _id: service.expertId.toString() 
+          const expert = await Person.findOne({ 
+            _id: service.expertId.toString(),
+            personType: 'expert',
+            active: true 
           });
 
           if (expert && expert.active) {
@@ -31,17 +32,27 @@ export class CommissionService {
             const inputCosts = service.input.reduce((total: number, input: any) => total + input.amount, 0);
             
             // Calcular comisión base
-            const baseCommissionRate = expert.commissionSettings.serviceCommission;
+            const baseCommissionRate = expert.expertInfo?.commissionSettings?.serviceCommission || 0;
             const appliedCommissionRate = baseCommissionRate;
             
             // Calcular monto neto según método de cálculo
             let netAmount = service.amount;
-            if (expert.commissionSettings.serviceCalculationMethod === 'after_inputs') {
+            if (expert.expertInfo?.commissionSettings?.serviceCalculationMethod === 'after_inputs') {
               netAmount = service.amount - inputCosts;
             }
             
             // Calcular comisión
-            const commissionAmount = expert.calculateServiceCommission(service.amount, inputCosts);
+            let commissionAmount = 0;
+            if (expert.expertInfo?.commissionSettings?.serviceCalculationMethod === 'before_inputs') {
+              commissionAmount = (service.amount * baseCommissionRate) / 100;
+            } else {
+              commissionAmount = (netAmount * baseCommissionRate) / 100;
+            }
+            
+            // Aplicar límites
+            const minCommission = expert.expertInfo?.commissionSettings?.minimumServiceCommission || 0;
+            const maxCommission = expert.expertInfo?.commissionSettings?.maximumServiceCommission || Infinity;
+            commissionAmount = Math.max(minCommission, Math.min(commissionAmount, maxCommission));
             
             // Crear comisión
             const commission = new Commission({
@@ -72,16 +83,17 @@ export class CommissionService {
       // Crear comisiones por retail
       for (const retail of sale.retail) {
         try {
-          const expert = await Expert.findOne({ 
-            businessId, 
-            _id: retail.expertId.toString() 
+          const expert = await Person.findOne({ 
+            _id: retail.expertId.toString(),
+            personType: 'expert',
+            active: true 
           });
 
           if (expert && expert.active) {
             // Calcular comisión por retail
-            const baseCommissionRate = expert.commissionSettings.retailCommission;
+            const baseCommissionRate = expert.expertInfo?.commissionSettings?.retailCommission || 0;
             const appliedCommissionRate = baseCommissionRate;
-            const commissionAmount = expert.calculateRetailCommission(retail.amount);
+            const commissionAmount = (retail.amount * baseCommissionRate) / 100;
             
             // Crear comisión
             const commission = new Commission({

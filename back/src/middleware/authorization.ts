@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import User, { UserRole, ROLE_PERMISSIONS } from '../models/user';
+import Person, { UserRole, ROLE_PERMISSIONS } from '../models/person';
 
 // Extender la interfaz Request para incluir user
 declare global {
@@ -9,10 +9,7 @@ declare global {
         id: string;
         email: string;
         name: string;
-        role: UserRole;
-        permissions?: any[];
-        businesses: string[];
-        defaultBusiness?: string;
+        role: string;
       };
     }
   }
@@ -78,7 +75,7 @@ export const requirePermission = (module: string, action: string) => {
         data: {
           requiredPermission: { module, action },
           userRole: req.user.role,
-          userPermissions: req.user.permissions
+          userPermissions: user.userInfo?.permissions || []
         }
       });
       return;
@@ -110,7 +107,7 @@ export const requireAllPermissions = (permissions: { module: string; action: str
         data: {
           missingPermissions,
           userRole: req.user.role,
-          userPermissions: req.user.permissions
+          userPermissions: user.userInfo?.permissions || []
         }
       });
       return;
@@ -142,7 +139,7 @@ export const requireAnyPermission = (permissions: { module: string; action: stri
         data: {
           requiredPermissions: permissions,
           userRole: req.user.role,
-          userPermissions: req.user.permissions
+          userPermissions: user.userInfo?.permissions || []
         }
       });
       return;
@@ -180,13 +177,13 @@ export const requireBusinessAccess = (businessIdParam: string = 'businessId') =>
     }
 
     // Verificar si el usuario tiene acceso al negocio
-    if (!req.user.businesses.includes(businessId)) {
+    if (!user.userInfo?.businesses.includes(businessId)) {
       res.status(403).json({
         success: false,
         message: 'Acceso denegado. No tienes permisos para acceder a este negocio.',
         data: {
           businessId,
-          userBusinesses: req.user.businesses
+          userBusinesses: user.userInfo?.businesses || []
         }
       });
       return;
@@ -306,7 +303,7 @@ export const requireActiveUser = async (req: Request, res: Response, next: NextF
     }
 
     // Buscar el usuario en la base de datos para verificar su estado
-    const user = await User.findById(req.user.id);
+    const user = await Person.findOne({ _id: req.user.id, personType: 'user' });
     
     if (!user) {
       res.status(401).json({
