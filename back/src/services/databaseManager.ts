@@ -93,25 +93,7 @@ class DatabaseManager {
         updatedAt: { type: Date, default: Date.now }
       });
 
-      // Esquema de productos (adaptado a tu estructura actual)
-      const productSchema = new mongoose.Schema({
-        nameProduct: { type: String, required: true },
-        marca: { type: String, required: true },
-        cost: { type: Number, required: true },
-        qtyPack: { type: Number, required: true },
-        qtyUnit: { type: Number, required: true },
-        clientPrice: { type: Number, required: true },
-        inputPrice: { type: Number, required: true },
-        expertPrice: { type: Number, required: true },
-        uses: {
-          input: Boolean,
-          retail: Boolean
-        },
-        businessId: { type: String, default: businessId },
-        active: { type: Boolean, default: true },
-        createdAt: { type: Date, default: Date.now },
-        updatedAt: { type: Date, default: Date.now }
-      });
+      // Esquema de productos (adaptado a tu estructura actual) - ELIMINADO, usando el nuevo esquema
 
       // Esquema de expertos (adaptado a tu estructura actual)
       const expertSchema = new mongoose.Schema({
@@ -208,7 +190,7 @@ class DatabaseManager {
       // Crear modelos en la nueva base de datos
       connection.model('Client', clientSchema);
       connection.model('Service', serviceSchema);
-      connection.model('Product', productSchema);
+      // Product se crea más abajo con el nuevo esquema
       connection.model('Expert', expertSchema);
       connection.model('Provider', providerSchema);
       connection.model('Payment', paymentSchema);
@@ -586,6 +568,187 @@ class DatabaseManager {
       
       // Crear el modelo de anticipos
       connection.model('Advance', advanceSchema);
+      
+      // Modelo de gastos
+      const expenseSchema = new mongoose.Schema({
+        businessId: { type: String, required: true },
+        expenseType: { type: String, enum: ['operational', 'administrative', 'maintenance', 'personnel', 'extraordinary', 'marketing', 'utilities', 'insurance', 'taxes', 'other'], required: true },
+        category: { type: String, required: true, trim: true },
+        subcategory: { type: String, required: false, trim: true },
+        amount: { type: Number, required: true, min: 0 },
+        taxAmount: { type: Number, required: false, min: 0, default: 0 },
+        totalAmount: { type: Number, required: true, min: 0 },
+        paymentMethod: { type: String, enum: ['cash', 'transfer', 'card', 'check'], required: true },
+        paymentReference: { type: String, required: false, trim: true },
+        status: { type: String, enum: ['pending', 'approved', 'paid', 'cancelled', 'rejected'], default: 'pending', required: true },
+        vendorName: { type: String, required: false, trim: true },
+        vendorId: { type: String, required: false },
+        invoiceNumber: { type: String, required: false, trim: true },
+        invoiceDate: { type: Date, required: false },
+        dueDate: { type: Date, required: false },
+        description: { type: String, required: true, trim: true },
+        detailedDescription: { type: String, required: false, trim: true },
+        location: { type: String, required: false, trim: true },
+        department: { type: String, required: false, trim: true },
+        requestedBy: { type: String, required: true },
+        approvedBy: { type: String, required: false },
+        rejectedBy: { type: String, required: false },
+        rejectionReason: { type: String, required: false, trim: true },
+        requestDate: { type: Date, required: true, default: Date.now },
+        approvalDate: { type: Date, required: false },
+        paymentDate: { type: Date, required: false },
+        rejectionDate: { type: Date, required: false },
+        isRecurring: { type: Boolean, default: false },
+        isInstallment: { type: Boolean, default: false },
+        budgetCategory: { type: String, required: false, trim: true },
+        budgetAmount: { type: Number, required: false, min: 0 },
+        budgetVariance: { type: Number, required: false },
+        notes: { type: String, required: false, trim: true },
+        internalNotes: { type: String, required: false, trim: true },
+        tags: [{ type: String, trim: true }],
+        createdAt: { type: Date, default: Date.now },
+        updatedAt: { type: Date, default: Date.now }
+      });
+      
+      // Crear el modelo de gastos
+      connection.model('Expense', expenseSchema);
+      
+      // Modelo de productos
+      const productSchema = new mongoose.Schema({
+        businessId: { type: String, required: true },
+        name: { type: String, required: true, trim: true },
+        brand: { type: String, required: true, trim: true },
+        category: { type: String, required: true, trim: true },
+        subcategory: { type: String, required: false, trim: true },
+        sku: { type: String, required: true, unique: true, trim: true },
+        barcode: { type: String, required: false, trim: true },
+        costPrice: { type: Number, required: true, min: 0 },
+        inputPrice: { type: Number, required: true, min: 0 },
+        clientPrice: { type: Number, required: true, min: 0 },
+        expertPrice: { type: Number, required: true, min: 0 },
+        packageInfo: {
+          qtyPerPackage: { type: Number, required: true, min: 1 },
+          unitSize: { type: Number, required: true, min: 0 },
+          unitType: { type: String, enum: ['ml', 'gr', 'pcs', 'oz', 'lb'], required: true },
+          packageSize: { type: Number, required: false, min: 0 },
+          packageType: { type: String, required: false, trim: true }
+        },
+        uses: {
+          isInput: { type: Boolean, default: false },
+          isRetail: { type: Boolean, default: false },
+          isWholesale: { type: Boolean, default: false }
+        },
+        inventory: {
+          currentStock: { type: Number, required: true, min: 0, default: 0 },
+          minimumStock: { type: Number, required: true, min: 0, default: 0 },
+          maximumStock: { type: Number, required: true, min: 0, default: 1000 },
+          reservedStock: { type: Number, required: true, min: 0, default: 0 },
+          reorderPoint: { type: Number, required: true, min: 0, default: 0 },
+          reorderQuantity: { type: Number, required: true, min: 0, default: 0 }
+        },
+        supplier: {
+          name: { type: String, required: true, trim: true },
+          contact: { type: String, required: false, trim: true },
+          phone: { type: String, required: false, trim: true },
+          email: { type: String, required: false, trim: true },
+          address: { type: String, required: false, trim: true }
+        },
+        isActive: { type: Boolean, default: true },
+        isDiscontinued: { type: Boolean, default: false },
+        requiresRefrigeration: { type: Boolean, default: false },
+        expirationDate: { type: Date, required: false },
+        description: { type: String, required: false, trim: true },
+        notes: { type: String, required: false, trim: true },
+        tags: [{ type: String, trim: true }],
+        createdBy: { type: String, required: true },
+        updatedBy: { type: String, required: true },
+        createdAt: { type: Date, default: Date.now },
+        updatedAt: { type: Date, default: Date.now }
+      });
+      
+      // Crear el modelo de productos
+      connection.model('Product', productSchema);
+      
+      // Modelo de movimientos de inventario
+      const inventoryMovementSchema = new mongoose.Schema({
+        businessId: { type: String, required: true },
+        productId: { type: String, required: true },
+        movementType: { type: String, enum: ['in', 'out', 'adjustment', 'transfer', 'reserve', 'release', 'expired', 'damaged', 'loss', 'theft', 'breakage', 'spillage'], required: true },
+        movementCategory: { type: String, enum: ['purchase', 'sale', 'return', 'adjustment', 'transfer', 'reserve', 'expired', 'damaged', 'production', 'consumption', 'loss', 'theft', 'breakage', 'spillage'], required: true },
+        quantity: { type: Number, required: true, min: 0 },
+        unitSize: { type: Number, required: true, min: 0 },
+        unitType: { type: String, enum: ['ml', 'gr', 'pcs', 'oz', 'lb'], required: true },
+        totalSize: { type: Number, required: true, min: 0 },
+        unitCost: { type: Number, required: true, min: 0 },
+        totalCost: { type: Number, required: true, min: 0 },
+        unitPrice: { type: Number, required: false, min: 0 },
+        totalPrice: { type: Number, required: false, min: 0 },
+        stockBefore: { type: Number, required: true, min: 0 },
+        stockAfter: { type: Number, required: true, min: 0 },
+        referenceId: { type: String, required: false },
+        referenceType: { type: String, enum: ['sale', 'purchase', 'expense', 'adjustment', 'transfer'], required: false },
+        referenceNumber: { type: String, required: false, trim: true },
+        reason: { type: String, required: true, trim: true },
+        description: { type: String, required: false, trim: true },
+        location: { type: String, required: false, trim: true },
+        department: { type: String, required: false, trim: true },
+        performedBy: { type: String, required: true },
+        approvedBy: { type: String, required: false },
+        movementDate: { type: Date, required: true, default: Date.now },
+        expirationDate: { type: Date, required: false },
+        status: { type: String, enum: ['pending', 'completed', 'cancelled', 'reversed'], default: 'completed', required: true },
+        notes: { type: String, required: false, trim: true },
+        internalNotes: { type: String, required: false, trim: true },
+        createdAt: { type: Date, default: Date.now },
+        updatedAt: { type: Date, default: Date.now }
+      });
+      
+      // Crear el modelo de movimientos de inventario
+      connection.model('InventoryMovement', inventoryMovementSchema);
+      
+      // Modelo de órdenes de compra
+      const purchaseOrderSchema = new mongoose.Schema({
+        businessId: { type: String, required: true },
+        orderNumber: { type: String, required: true, unique: true, trim: true },
+        orderType: { type: String, enum: ['automatic', 'manual', 'reorder'], required: true },
+        status: { type: String, enum: ['draft', 'pending', 'approved', 'sent', 'received', 'cancelled'], default: 'draft', required: true },
+        supplier: {
+          name: { type: String, required: true, trim: true },
+          contact: { type: String, required: false, trim: true },
+          phone: { type: String, required: false, trim: true },
+          email: { type: String, required: false, trim: true },
+          address: { type: String, required: false, trim: true }
+        },
+        items: [{
+          productId: { type: String, required: true },
+          productName: { type: String, required: true, trim: true },
+          productSku: { type: String, required: true, trim: true },
+          quantity: { type: Number, required: true, min: 1 },
+          unitCost: { type: Number, required: true, min: 0 },
+          totalCost: { type: Number, required: true, min: 0 },
+          currentStock: { type: Number, required: true, min: 0 },
+          minimumStock: { type: Number, required: true, min: 0 },
+          reorderQuantity: { type: Number, required: true, min: 0 },
+          reason: { type: String, enum: ['low_stock', 'out_of_stock', 'manual', 'reorder'], required: true }
+        }],
+        subtotal: { type: Number, required: true, min: 0 },
+        taxAmount: { type: Number, required: true, min: 0, default: 0 },
+        totalAmount: { type: Number, required: true, min: 0 },
+        orderDate: { type: Date, required: true, default: Date.now },
+        expectedDeliveryDate: { type: Date, required: false },
+        actualDeliveryDate: { type: Date, required: false },
+        createdBy: { type: String, required: true },
+        approvedBy: { type: String, required: false },
+        sentBy: { type: String, required: false },
+        receivedBy: { type: String, required: false },
+        notes: { type: String, required: false, trim: true },
+        internalNotes: { type: String, required: false, trim: true },
+        createdAt: { type: Date, default: Date.now },
+        updatedAt: { type: Date, default: Date.now }
+      });
+      
+      // Crear el modelo de órdenes de compra
+      connection.model('PurchaseOrder', purchaseOrderSchema);
 
       console.log(`✅ Colecciones inicializadas para el negocio: ${businessId}`);
 

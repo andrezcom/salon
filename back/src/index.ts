@@ -2,6 +2,7 @@ import express from "express";
 import routes from "./routes/index";
 import 'dotenv/config'
 const cors = require('cors')
+import path from 'path';
 
 import connect from './db/connect';
 
@@ -9,6 +10,10 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+
+// Servir archivos estáticos (imágenes de perfil)
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
 app.use("/api", routes);
 
 

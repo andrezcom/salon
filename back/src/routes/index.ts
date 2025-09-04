@@ -15,6 +15,11 @@ import commissionRouter from './commission'
 import dashboardRouter from './dashboard'
 import cashTransactionRouter from './cashTransaction'
 import advanceRouter from './advance'
+import expenseRouter from './expense'
+import inventoryRouter from './inventory'
+import purchaseOrderRouter from './purchaseOrder'
+import businessProfileRouter from './businessProfile'
+import userManagementRouter from './userManagement'
 
 const router = express.Router();
 router.use('/auth', authRouter)
@@ -32,5 +37,10 @@ router.use('/commission', commissionRouter)
 router.use('/dashboard', dashboardRouter)
 router.use('/cash-transaction', cashTransactionRouter)
 router.use('/advance', advanceRouter)
+router.use('/expense', expenseRouter)
+router.use('/inventory', inventoryRouter)
+router.use('/purchase-order', purchaseOrderRouter)
+router.use('/api', businessProfileRouter)
+router.use('/api', userManagementRouter)
 
 export default router

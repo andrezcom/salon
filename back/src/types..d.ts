@@ -95,3 +95,17 @@ export interface Service {
   },
   active: Boolean
 }
+
+// Extensión de Request para incluir usuario autenticado
+declare global {
+  namespace Express {
+    interface Request {
+      user?: {
+        id: string;
+        email: string;
+        name: string;
+        role: string;
+      };
+    }
+  }
+}

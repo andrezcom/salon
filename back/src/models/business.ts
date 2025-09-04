@@ -5,6 +5,14 @@ export interface IBusiness extends Document {
   ownerId: mongoose.Types.ObjectId;
   databaseName: string;
   status: 'active' | 'inactive' | 'suspended';
+  profileImage?: {
+    url: string;
+    filename: string;
+    originalName: string;
+    size: number;
+    mimeType: string;
+    uploadedAt: Date;
+  };
   settings: {
     theme: string;
     currency: string;
@@ -42,6 +50,38 @@ const businessSchema = new Schema<IBusiness>({
     type: String,
     enum: ['active', 'inactive', 'suspended'],
     default: 'active'
+  },
+  profileImage: {
+    url: {
+      type: String,
+      required: false,
+      trim: true
+    },
+    filename: {
+      type: String,
+      required: false,
+      trim: true
+    },
+    originalName: {
+      type: String,
+      required: false,
+      trim: true
+    },
+    size: {
+      type: Number,
+      required: false,
+      min: 0
+    },
+    mimeType: {
+      type: String,
+      required: false,
+      trim: true
+    },
+    uploadedAt: {
+      type: Date,
+      required: false,
+      default: Date.now
+    }
   },
   settings: {
     theme: {
@@ -87,9 +127,47 @@ const businessSchema = new Schema<IBusiness>({
   timestamps: true
 });
 
+// Métodos del modelo
+businessSchema.methods.setProfileImage = function(imageData: {
+  url: string;
+  filename: string;
+  originalName: string;
+  size: number;
+  mimeType: string;
+}) {
+  this.profileImage = {
+    ...imageData,
+    uploadedAt: new Date()
+  };
+  return this.save();
+};
+
+businessSchema.methods.removeProfileImage = function() {
+  this.profileImage = undefined;
+  return this.save();
+};
+
+businessSchema.methods.hasProfileImage = function(): boolean {
+  return !!(this.profileImage && this.profileImage.url);
+};
+
+businessSchema.methods.getProfileImageUrl = function(): string | null {
+  return this.profileImage?.url || null;
+};
+
+// Métodos estáticos
+businessSchema.statics.findByOwner = function(ownerId: string) {
+  return this.find({ ownerId }).sort({ createdAt: -1 });
+};
+
+businessSchema.statics.findActive = function() {
+  return this.find({ status: 'active' }).sort({ name: 1 });
+};
+
 // Índices para mejorar el rendimiento
 businessSchema.index({ ownerId: 1 });
 businessSchema.index({ databaseName: 1 });
 businessSchema.index({ status: 1 });
+businessSchema.index({ 'profileImage.uploadedAt': -1 });
 
 export default mongoose.model<IBusiness>('Business', businessSchema);
