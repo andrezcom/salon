@@ -2,6 +2,11 @@ import { Request, Response } from 'express';
 import CommissionPeriod from '../models/commissionPeriod';
 import Commission from '../models/commission';
 import Person from '../models/person';
+import Business from '../models/business';
+import { PDFGeneratorService } from '../services/pdfGenerator';
+import { ExcelGeneratorService } from '../services/excelGenerator';
+import path from 'path';
+import fs from 'fs';
 
 export class CommissionPeriodReportController {
 
@@ -447,7 +452,7 @@ export class CommissionPeriodReportController {
    */
   static async exportToPDF(req: Request, res: Response): Promise<void> {
     try {
-      const { reportType, reportData } = req.body;
+      const { reportType, reportData, filters } = req.body;
       const businessId = req.user?.businessId || req.body.businessId;
       const exportedBy = req.user?.id;
 
@@ -459,22 +464,47 @@ export class CommissionPeriodReportController {
         return;
       }
 
-      // Aquí se implementaría la generación del PDF usando librerías como puppeteer o jsPDF
-      // Por ahora, simulamos la exportación
-      const filename = `reporte_comisiones_${reportType}_${new Date().toISOString().split('T')[0]}.pdf`;
-      
-      res.status(200).json({
-        success: true,
-        message: 'Reporte exportado a PDF exitosamente',
-        data: {
-          filename,
-          downloadUrl: `/api/commission-period-reports/download/${filename}`,
-          reportType,
-          exportedAt: new Date()
-        }
-      });
+      // Obtener información del negocio
+      const business = await Business.findOne({ _id: businessId });
+      if (!business) {
+        res.status(404).json({
+          success: false,
+          message: 'Negocio no encontrado'
+        });
+        return;
+      }
+
+      // Generar PDF
+      const pdfBuffer = await PDFGeneratorService.generateCommissionPeriodReportPDF(
+        reportData,
+        business,
+        reportType
+      );
+
+      // Crear directorio de descargas si no existe
+      const downloadsDir = path.join(process.cwd(), 'downloads');
+      if (!fs.existsSync(downloadsDir)) {
+        fs.mkdirSync(downloadsDir, { recursive: true });
+      }
+
+      // Generar nombre de archivo único
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const filename = `reporte_comisiones_${reportType}_${timestamp}.pdf`;
+      const filePath = path.join(downloadsDir, filename);
+
+      // Guardar archivo
+      fs.writeFileSync(filePath, pdfBuffer);
+
+      // Configurar headers para descarga
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.setHeader('Content-Length', pdfBuffer.length);
+
+      // Enviar archivo
+      res.send(pdfBuffer);
 
     } catch (error) {
+      console.error('Error exportando a PDF:', error);
       res.status(500).json({
         success: false,
         message: 'Error interno del servidor',
