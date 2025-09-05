@@ -27,6 +27,7 @@ import supplierDashboardRouter from './supplierDashboard'
 import accountsPayableRouter from './accountsPayable'
 import purchaseOrderRouter from './purchaseOrder'
 import inventoryRouter from './inventory'
+import colorPaletteRouter from './colorPalette'
 
 const router = express.Router();
 router.use('/auth', authRouter)
@@ -56,5 +57,6 @@ router.use('/purchase-orders', purchaseOrderRouter)
 router.use('/inventory', inventoryRouter)
 router.use('/loyalty', loyaltyRouter)
 router.use('/client-retention', clientRetentionRouter)
+router.use('/color-palette', colorPaletteRouter)
 
 export default router
