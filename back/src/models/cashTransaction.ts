@@ -2,10 +2,13 @@ import mongoose, { Schema, Document } from 'mongoose';
 
 export interface ICashTransaction extends Document {
   businessId: string;
-  saleId: string;
+  saleId?: string; // Opcional para transacciones que no son de ventas
+  reference?: string; // Referencia a anticipo, nómina, etc.
+  employeeId?: string; // ID del empleado (para anticipos)
+  employeeType?: 'expert' | 'user'; // Tipo de empleado
   
   // Tipo de transacción
-  transactionType: 'tip' | 'change' | 'refund' | 'adjustment';
+  transactionType: 'tip' | 'change' | 'refund' | 'adjustment' | 'advance_payment' | 'advance_repayment';
   
   // Montos
   amount: number;
@@ -48,6 +51,16 @@ export interface ICashTransaction extends Document {
     adjustmentNotes?: string;
     approvedBy?: string;
   };
+
+  // Para anticipos
+  advanceDetails?: {
+    advanceId: string;
+    advanceType: 'advance' | 'loan' | 'bonus' | 'expense_reimbursement';
+    advanceReason: string;
+    advanceAmount: number;
+    processedBy?: string;
+    processedAt?: Date;
+  };
   
   // Estado de la transacción
   status: 'pending' | 'completed' | 'cancelled' | 'reversed';
@@ -76,14 +89,29 @@ const cashTransactionSchema = new Schema<ICashTransaction>({
   },
   saleId: {
     type: String,
-    required: true,
+    required: false,
     index: true
+  },
+  reference: {
+    type: String,
+    required: false,
+    index: true
+  },
+  employeeId: {
+    type: String,
+    required: false,
+    index: true
+  },
+  employeeType: {
+    type: String,
+    enum: ['expert', 'user'],
+    required: false
   },
   
   // Tipo de transacción
   transactionType: {
     type: String,
-    enum: ['tip', 'change', 'refund', 'adjustment'],
+    enum: ['tip', 'change', 'refund', 'adjustment', 'advance_payment', 'advance_repayment'],
     required: true
   },
   
@@ -202,6 +230,36 @@ const cashTransactionSchema = new Schema<ICashTransaction>({
     },
     approvedBy: {
       type: String,
+      required: false
+    }
+  },
+
+  // Para anticipos
+  advanceDetails: {
+    advanceId: {
+      type: String,
+      required: false
+    },
+    advanceType: {
+      type: String,
+      enum: ['advance', 'loan', 'bonus', 'expense_reimbursement'],
+      required: false
+    },
+    advanceReason: {
+      type: String,
+      required: false
+    },
+    advanceAmount: {
+      type: Number,
+      required: false,
+      min: 0
+    },
+    processedBy: {
+      type: String,
+      required: false
+    },
+    processedAt: {
+      type: Date,
       required: false
     }
   },

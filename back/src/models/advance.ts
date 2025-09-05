@@ -2,7 +2,8 @@ import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IAdvance extends Document {
   businessId: string;
-  expertId: string;
+  employeeId: string; // Cambiado de expertId a employeeId para incluir todos los empleados
+  employeeType: 'expert' | 'user'; // Tipo de empleado: experto o empleado regular
   
   // Información del anticipo
   advanceType: 'advance' | 'loan' | 'bonus' | 'expense_reimbursement';
@@ -26,7 +27,7 @@ export interface IAdvance extends Document {
   repaymentDate?: Date; // Fecha de devolución
   
   // Información de aprobación
-  requestedBy: string; // ID del experto
+  requestedBy: string; // ID del empleado (experto o usuario regular)
   approvedBy?: string; // ID del aprobador
   rejectedBy?: string; // ID del rechazador
   rejectionReason?: string;
@@ -52,9 +53,10 @@ export interface IAdvance extends Document {
     date: Date;
   }>;
   
-  // Descuentos de comisiones
-  commissionDeductions: Array<{
-    commissionId: string;
+  // Descuentos de comisiones (para expertos) o nómina (para empleados regulares)
+  deductions: Array<{
+    type: 'commission' | 'payroll'; // Tipo de descuento
+    sourceId: string; // ID de la comisión o nómina
     amount: number;
     date: Date;
     description: string;
@@ -78,8 +80,14 @@ const advanceSchema = new Schema<IAdvance>({
     required: true,
     index: true
   },
-  expertId: {
+  employeeId: {
     type: String,
+    required: true,
+    index: true
+  },
+  employeeType: {
+    type: String,
+    enum: ['expert', 'user'],
     required: true,
     index: true
   },
@@ -234,9 +242,14 @@ const advanceSchema = new Schema<IAdvance>({
     }
   }],
   
-  // Descuentos de comisiones
-  commissionDeductions: [{
-    commissionId: {
+  // Descuentos de comisiones (para expertos) o nómina (para empleados regulares)
+  deductions: [{
+    type: {
+      type: String,
+      enum: ['commission', 'payroll'],
+      required: true
+    },
+    sourceId: {
       type: String,
       required: true
     },
@@ -277,7 +290,8 @@ const advanceSchema = new Schema<IAdvance>({
 });
 
 // Índices para mejorar el rendimiento
-advanceSchema.index({ businessId: 1, expertId: 1 });
+advanceSchema.index({ businessId: 1, employeeId: 1 });
+advanceSchema.index({ businessId: 1, employeeType: 1 });
 advanceSchema.index({ businessId: 1, status: 1 });
 advanceSchema.index({ businessId: 1, advanceType: 1 });
 advanceSchema.index({ businessId: 1, requestDate: -1 });
@@ -285,8 +299,8 @@ advanceSchema.index({ businessId: 1, dueDate: 1 });
 
 // Middleware para calcular el balance restante
 advanceSchema.pre('save', function(next) {
-  if (this.isModified('amount') || this.isModified('commissionDeductions')) {
-    const totalDeductions = this.commissionDeductions.reduce((total, deduction) => total + deduction.amount, 0);
+  if (this.isModified('amount') || this.isModified('deductions')) {
+    const totalDeductions = this.deductions.reduce((total, deduction) => total + deduction.amount, 0);
     this.remainingBalance = Math.max(0, this.amount - totalDeductions);
   }
   next();
@@ -347,8 +361,13 @@ advanceSchema.methods.cancel = function(userId: string, reason: string) {
   return this.save();
 };
 
-// Método para aplicar descuento de comisión
-advanceSchema.methods.applyCommissionDeduction = function(commissionId: string, amount: number, description: string) {
+// Método para aplicar descuento (comisión o nómina)
+advanceSchema.methods.applyDeduction = function(
+  type: 'commission' | 'payroll', 
+  sourceId: string, 
+  amount: number, 
+  description: string
+) {
   if (this.status !== 'paid') {
     throw new Error('Solo se pueden aplicar descuentos a anticipos pagados');
   }
@@ -357,8 +376,9 @@ advanceSchema.methods.applyCommissionDeduction = function(commissionId: string, 
     throw new Error('El monto del descuento excede el balance restante');
   }
   
-  this.commissionDeductions.push({
-    commissionId,
+  this.deductions.push({
+    type,
+    sourceId,
     amount,
     date: new Date(),
     description
@@ -386,7 +406,8 @@ advanceSchema.methods.markAsRepaid = function() {
 // Método estático para crear anticipo
 advanceSchema.statics.createAdvance = async function(
   businessId: string,
-  expertId: string,
+  employeeId: string,
+  employeeType: 'expert' | 'user',
   advanceType: 'advance' | 'loan' | 'bonus' | 'expense_reimbursement',
   amount: number,
   reason: string,
@@ -407,7 +428,8 @@ advanceSchema.statics.createAdvance = async function(
 ) {
   const advance = new this({
     businessId,
-    expertId,
+    employeeId,
+    employeeType,
     advanceType,
     amount,
     requestedAmount: amount,
@@ -420,10 +442,10 @@ advanceSchema.statics.createAdvance = async function(
   return await advance.save();
 };
 
-// Método estático para obtener resumen de anticipos por experto
-advanceSchema.statics.getExpertAdvanceSummary = async function(businessId: string, expertId: string) {
+// Método estático para obtener resumen de anticipos por empleado
+advanceSchema.statics.getEmployeeAdvanceSummary = async function(businessId: string, employeeId: string) {
   const summary = await this.aggregate([
-    { $match: { businessId, expertId } },
+    { $match: { businessId, employeeId } },
     {
       $group: {
         _id: '$status',
@@ -455,6 +477,77 @@ advanceSchema.statics.getExpertAdvanceSummary = async function(businessId: strin
   result.remainingBalance = result.totalPaid - result.totalRepaid;
   
   return result;
+};
+
+// Método estático para obtener anticipos pendientes de descuento en nómina
+advanceSchema.statics.getPendingPayrollDeductions = async function(businessId: string, employeeId: string) {
+  return this.find({
+    businessId,
+    employeeId,
+    employeeType: 'user', // Solo empleados regulares
+    status: 'paid',
+    remainingBalance: { $gt: 0 }
+  }).sort({ requestDate: 1 });
+};
+
+// Método estático para obtener anticipos pendientes de descuento en comisiones
+advanceSchema.statics.getPendingCommissionDeductions = async function(businessId: string, employeeId: string) {
+  return this.find({
+    businessId,
+    employeeId,
+    employeeType: 'expert', // Solo expertos
+    status: 'paid',
+    remainingBalance: { $gt: 0 }
+  }).sort({ requestDate: 1 });
+};
+
+// Método estático para crear transacción de caja automática
+advanceSchema.statics.createCashTransaction = async function(advance: any, transactionType: 'advance_payment' | 'advance_repayment') {
+  const CashTransaction = mongoose.model('CashTransaction');
+  
+  // Obtener balance actual de caja
+  const CashBalance = mongoose.model('CashBalance');
+  const cashBalance = await CashBalance.findOne({ businessId: advance.businessId, status: 'open' });
+  
+  if (!cashBalance) {
+    throw new Error('No hay balance de caja abierto para este negocio');
+  }
+
+  const previousBalance = cashBalance.currentBalance;
+  const newBalance = transactionType === 'advance_payment' 
+    ? previousBalance - advance.amount 
+    : previousBalance + advance.amount;
+
+  const transaction = new CashTransaction({
+    businessId: advance.businessId,
+    transactionType: transactionType,
+    amount: advance.amount,
+    previousBalance: previousBalance,
+    newBalance: newBalance,
+    paymentMethod: advance.paymentMethod || 'cash',
+    reference: advance._id.toString(),
+    employeeId: advance.employeeId,
+    employeeType: advance.employeeType,
+    status: 'completed',
+    createdBy: advance.approvedBy,
+    advanceDetails: {
+      advanceId: advance._id.toString(),
+      advanceType: advance.advanceType,
+      advanceReason: advance.reason,
+      advanceAmount: advance.amount,
+      processedBy: advance.approvedBy,
+      processedAt: new Date()
+    }
+  });
+  
+  // Actualizar balance de caja
+  cashBalance.currentBalance = newBalance;
+  cashBalance.lastTransactionDate = new Date();
+  cashBalance.lastTransactionAmount = transactionType === 'advance_payment' ? -advance.amount : advance.amount;
+  cashBalance.lastTransactionType = transactionType;
+  await cashBalance.save();
+  
+  return await transaction.save();
 };
 
 export default mongoose.model<IAdvance>('Advance', advanceSchema);

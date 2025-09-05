@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import Advance from '../models/advance';
-import Expert from '../models/expert';
+import Person from '../models/person';
 import CashBalance from '../models/cashBalance';
 import CashTransaction from '../models/cashTransaction';
 
@@ -12,7 +12,8 @@ export class AdvanceController {
     try {
       const { businessId } = req.params;
       const { 
-        expertId, 
+        employeeId, 
+        employeeType,
         status, 
         advanceType,
         category,
@@ -25,7 +26,8 @@ export class AdvanceController {
       // Construir filtros
       const filters: any = { businessId };
       
-      if (expertId) filters.expertId = expertId;
+      if (employeeId) filters.employeeId = employeeId;
+      if (employeeType) filters.employeeType = employeeType;
       if (status) filters.status = status;
       if (advanceType) filters.advanceType = advanceType;
       if (category) filters.category = category;
@@ -40,9 +42,9 @@ export class AdvanceController {
       const skip = (Number(page) - 1) * Number(limit);
       
       const advances = await Advance.find(filters)
-        .populate('expertId', 'nameExpert aliasExpert email')
-        .populate('requestedBy', 'name email')
-        .populate('approvedBy', 'name email')
+        .populate('employeeId', 'firstName lastName email phone personType')
+        .populate('requestedBy', 'firstName lastName email')
+        .populate('approvedBy', 'firstName lastName email')
         .sort({ requestDate: -1 })
         .skip(skip)
         .limit(Number(limit));
@@ -79,10 +81,10 @@ export class AdvanceController {
         businessId, 
         _id: advanceId 
       })
-      .populate('expertId', 'nameExpert aliasExpert email phone')
-      .populate('requestedBy', 'name email')
-      .populate('approvedBy', 'name email')
-      .populate('rejectedBy', 'name email');
+      .populate('employeeId', 'firstName lastName email phone personType')
+      .populate('requestedBy', 'firstName lastName email')
+      .populate('approvedBy', 'firstName lastName email')
+      .populate('rejectedBy', 'firstName lastName email');
 
       if (!advance) {
         return res.status(404).json({
@@ -111,7 +113,8 @@ export class AdvanceController {
     try {
       const { businessId } = req.params;
       const { 
-        expertId,
+        employeeId,
+        employeeType,
         advanceType,
         amount,
         reason,
@@ -131,10 +134,26 @@ export class AdvanceController {
         });
       }
 
-      if (!expertId || !amount || !reason) {
+      if (!employeeId || !employeeType || !amount || !reason) {
         return res.status(400).json({
           success: false,
-          message: 'expertId, amount y reason son requeridos'
+          message: 'employeeId, employeeType, amount y reason son requeridos'
+        });
+      }
+
+      // Validar que el empleado existe y es del tipo correcto
+      const employee = await Person.findById(employeeId);
+      if (!employee) {
+        return res.status(404).json({
+          success: false,
+          message: 'Empleado no encontrado'
+        });
+      }
+
+      if (employee.personType !== employeeType) {
+        return res.status(400).json({
+          success: false,
+          message: `El empleado debe ser de tipo ${employeeType}`
         });
       }
 
@@ -145,19 +164,11 @@ export class AdvanceController {
         });
       }
 
-      // Verificar que el experto existe
-      const expert = await Expert.findOne({ businessId, _id: expertId });
-      if (!expert) {
-        return res.status(404).json({
-          success: false,
-          message: 'Experto no encontrado'
-        });
-      }
-
       // Crear el anticipo
       const advance = await Advance.createAdvance(
         businessId,
-        expertId,
+        employeeId,
+        employeeType,
         advanceType,
         amount,
         reason,
@@ -174,8 +185,8 @@ export class AdvanceController {
 
       // Obtener el anticipo con datos poblados
       const populatedAdvance = await Advance.findById(advance._id)
-        .populate('expertId', 'nameExpert aliasExpert email')
-        .populate('requestedBy', 'name email');
+        .populate('employeeId', 'firstName lastName email phone personType')
+        .populate('requestedBy', 'firstName lastName email');
 
       res.status(201).json({
         success: true,
@@ -400,27 +411,15 @@ export class AdvanceController {
         cashBalance.lastTransactionType = 'advance_payment';
         await cashBalance.save();
 
-        // Crear transacción de caja
-        await CashTransaction.createAdjustmentTransaction(
-          businessId,
-          advanceId,
-          'decrease',
-          advance.approvedAmount,
-          cashBalance.currentBalance + advance.approvedAmount,
-          {
-            adjustmentReason: `Pago de anticipo a ${advance.expertId}`,
-            adjustmentNotes: `Anticipo ID: ${advanceId}`,
-            approvedBy: userId
-          },
-          userId
-        );
+        // Crear transacción de caja automática
+        await Advance.createCashTransaction(advance, 'advance_payment');
       }
 
       // Obtener el anticipo actualizado
       const updatedAdvance = await Advance.findById(advanceId)
-        .populate('expertId', 'nameExpert aliasExpert email')
-        .populate('requestedBy', 'name email')
-        .populate('approvedBy', 'name email');
+        .populate('employeeId', 'firstName lastName email phone personType')
+        .populate('requestedBy', 'firstName lastName email')
+        .populate('approvedBy', 'firstName lastName email');
 
       res.json({
         success: true,
@@ -845,6 +844,174 @@ export class AdvanceController {
 
     } catch (error) {
       console.error('Error generando reporte de anticipos:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor',
+        error: error instanceof Error ? error.message : 'Error desconocido'
+      });
+    }
+  }
+
+  // Aplicar descuento de anticipo en nómina
+  static async applyPayrollDeduction(req: Request, res: Response) {
+    try {
+      const { businessId, advanceId } = req.params;
+      const { payrollId, amount, description } = req.body;
+      const userId = req.user?.id || req.body.userId;
+
+      if (!userId) {
+        return res.status(400).json({
+          success: false,
+          message: 'ID de usuario requerido'
+        });
+      }
+
+      if (!payrollId || !amount || !description) {
+        return res.status(400).json({
+          success: false,
+          message: 'payrollId, amount y description son requeridos'
+        });
+      }
+
+      // Buscar el anticipo
+      const advance = await Advance.findOne({ businessId, _id: advanceId });
+      if (!advance) {
+        return res.status(404).json({
+          success: false,
+          message: 'Anticipo no encontrado'
+        });
+      }
+
+      if (advance.employeeType !== 'user') {
+        return res.status(400).json({
+          success: false,
+          message: 'Este método solo aplica para empleados regulares (user)'
+        });
+      }
+
+      // Aplicar descuento
+      await advance.applyDeduction('payroll', payrollId, amount, description);
+
+      // Obtener el anticipo actualizado
+      const updatedAdvance = await Advance.findById(advanceId)
+        .populate('employeeId', 'firstName lastName email phone personType')
+        .populate('requestedBy', 'firstName lastName email')
+        .populate('approvedBy', 'firstName lastName email');
+
+      res.json({
+        success: true,
+        message: 'Descuento aplicado exitosamente en nómina',
+        data: updatedAdvance
+      });
+
+    } catch (error) {
+      console.error('Error aplicando descuento de nómina:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor',
+        error: error instanceof Error ? error.message : 'Error desconocido'
+      });
+    }
+  }
+
+  // Aplicar descuento de anticipo en comisión
+  static async applyCommissionDeduction(req: Request, res: Response) {
+    try {
+      const { businessId, advanceId } = req.params;
+      const { commissionId, amount, description } = req.body;
+      const userId = req.user?.id || req.body.userId;
+
+      if (!userId) {
+        return res.status(400).json({
+          success: false,
+          message: 'ID de usuario requerido'
+        });
+      }
+
+      if (!commissionId || !amount || !description) {
+        return res.status(400).json({
+          success: false,
+          message: 'commissionId, amount y description son requeridos'
+        });
+      }
+
+      // Buscar el anticipo
+      const advance = await Advance.findOne({ businessId, _id: advanceId });
+      if (!advance) {
+        return res.status(404).json({
+          success: false,
+          message: 'Anticipo no encontrado'
+        });
+      }
+
+      if (advance.employeeType !== 'expert') {
+        return res.status(400).json({
+          success: false,
+          message: 'Este método solo aplica para expertos'
+        });
+      }
+
+      // Aplicar descuento
+      await advance.applyDeduction('commission', commissionId, amount, description);
+
+      // Obtener el anticipo actualizado
+      const updatedAdvance = await Advance.findById(advanceId)
+        .populate('employeeId', 'firstName lastName email phone personType')
+        .populate('requestedBy', 'firstName lastName email')
+        .populate('approvedBy', 'firstName lastName email');
+
+      res.json({
+        success: true,
+        message: 'Descuento aplicado exitosamente en comisión',
+        data: updatedAdvance
+      });
+
+    } catch (error) {
+      console.error('Error aplicando descuento de comisión:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor',
+        error: error instanceof Error ? error.message : 'Error desconocido'
+      });
+    }
+  }
+
+  // Obtener anticipos pendientes de descuento para nómina
+  static async getPendingPayrollDeductions(req: Request, res: Response) {
+    try {
+      const { businessId, employeeId } = req.params;
+
+      const pendingAdvances = await Advance.getPendingPayrollDeductions(businessId, employeeId);
+
+      res.json({
+        success: true,
+        data: pendingAdvances
+      });
+
+    } catch (error) {
+      console.error('Error obteniendo anticipos pendientes de nómina:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor',
+        error: error instanceof Error ? error.message : 'Error desconocido'
+      });
+    }
+  }
+
+  // Obtener anticipos pendientes de descuento para comisiones
+  static async getPendingCommissionDeductions(req: Request, res: Response) {
+    try {
+      const { businessId, employeeId } = req.params;
+
+      const pendingAdvances = await Advance.getPendingCommissionDeductions(businessId, employeeId);
+
+      res.json({
+        success: true,
+        data: pendingAdvances
+      });
+
+    } catch (error) {
+      console.error('Error obteniendo anticipos pendientes de comisión:', error);
       res.status(500).json({
         success: false,
         message: 'Error interno del servidor',

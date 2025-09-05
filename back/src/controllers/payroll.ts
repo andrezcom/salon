@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import Payroll, { IPayroll, IPayrollItem, IPayrollPeriod } from '../models/payroll';
 import Person from '../models/person';
+import Advance from '../models/advance';
 import CashBalance from '../models/cashBalance';
 import CashTransaction from '../models/cashTransaction';
 
@@ -551,6 +552,132 @@ export class PayrollController {
         success: true,
         message: 'Nómina recalculada exitosamente',
         data: recalculatedPayroll
+      });
+
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor',
+        error: error instanceof Error ? error.message : 'Error desconocido'
+      });
+    }
+  }
+
+  // Aplicar descuentos de anticipos automáticamente en nómina
+  static async applyAdvanceDeductions(req: Request, res: Response): Promise<void> {
+    try {
+      const { businessId, payrollId } = req.params;
+      const { advanceIds } = req.body; // Array de IDs de anticipos a descontar
+      const userId = req.user?.id;
+
+      if (!userId) {
+        res.status(400).json({
+          success: false,
+          message: 'ID de usuario requerido'
+        });
+        return;
+      }
+
+      // Buscar la nómina
+      const payroll = await Payroll.findOne({ businessId, _id: payrollId });
+      if (!payroll) {
+        res.status(404).json({
+          success: false,
+          message: 'Nómina no encontrada'
+        });
+        return;
+      }
+
+      if (payroll.status !== 'draft') {
+        res.status(400).json({
+          success: false,
+          message: 'Solo se pueden aplicar descuentos a nóminas en estado draft'
+        });
+        return;
+      }
+
+      // Obtener anticipos pendientes del empleado
+      const pendingAdvances = await Advance.getPendingPayrollDeductions(businessId, payroll.employeeId.toString());
+      
+      let totalAdvanceDeductions = 0;
+      const appliedAdvances = [];
+
+      // Aplicar descuentos de anticipos especificados o todos los pendientes
+      const advancesToProcess = advanceIds ? 
+        pendingAdvances.filter(advance => advanceIds.includes(advance._id.toString())) :
+        pendingAdvances;
+
+      for (const advance of advancesToProcess) {
+        // Calcular monto a descontar (mínimo entre balance restante y monto disponible)
+        const deductionAmount = Math.min(advance.remainingBalance, payroll.calculation.netPay - totalAdvanceDeductions);
+        
+        if (deductionAmount > 0) {
+          // Agregar item de descuento a la nómina
+          const deductionItem: IPayrollItem = {
+            type: 'deduction',
+            description: `Descuento anticipo - ${advance.reason}`,
+            amount: deductionAmount,
+            taxable: false,
+            category: 'deductions'
+          };
+
+          payroll.items.push(deductionItem);
+          totalAdvanceDeductions += deductionAmount;
+
+          // Aplicar descuento al anticipo
+          await advance.applyDeduction('payroll', payrollId, deductionAmount, `Descuento en nómina ${payroll.period.startDate} - ${payroll.period.endDate}`);
+
+          appliedAdvances.push({
+            advanceId: advance._id,
+            amount: deductionAmount,
+            remainingBalance: advance.remainingBalance - deductionAmount
+          });
+
+          // Si el anticipo se pagó completamente, marcarlo como reembolsado
+          if (advance.remainingBalance - deductionAmount <= 0) {
+            await advance.markAsRepaid();
+          }
+        }
+      }
+
+      // Recalcular la nómina con los nuevos descuentos
+      await payroll.calculatePayroll();
+      await payroll.save();
+
+      // Obtener nómina actualizada
+      const updatedPayroll = await Payroll.findById(payrollId)
+        .populate('employeeId', 'firstName lastName userInfo.position userInfo.department')
+        .populate('createdBy', 'firstName lastName');
+
+      res.status(200).json({
+        success: true,
+        message: 'Descuentos de anticipos aplicados exitosamente',
+        data: {
+          payroll: updatedPayroll,
+          appliedAdvances,
+          totalAdvanceDeductions
+        }
+      });
+
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor',
+        error: error instanceof Error ? error.message : 'Error desconocido'
+      });
+    }
+  }
+
+  // Obtener anticipos pendientes para un empleado
+  static async getPendingAdvances(req: Request, res: Response): Promise<void> {
+    try {
+      const { businessId, employeeId } = req.params;
+
+      const pendingAdvances = await Advance.getPendingPayrollDeductions(businessId, employeeId);
+
+      res.status(200).json({
+        success: true,
+        data: pendingAdvances
       });
 
     } catch (error) {

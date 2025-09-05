@@ -65,4 +65,17 @@ router.post('/:id/recalculate',
   PayrollController.recalculatePayroll
 );
 
+// Rutas para integración con anticipos
+router.post('/:id/apply-advance-deductions',
+  requireAuth,
+  requirePermission('payroll', 'update'),
+  PayrollController.applyAdvanceDeductions
+);
+
+router.get('/employees/:employeeId/pending-advances',
+  requireAuth,
+  requirePermission('payroll', 'read'),
+  PayrollController.getPendingAdvances
+);
+
 export default router;

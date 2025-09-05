@@ -28,6 +28,12 @@ import accountsPayableRouter from './accountsPayable'
 import purchaseOrderRouter from './purchaseOrder'
 import inventoryRouter from './inventory'
 import colorPaletteRouter from './colorPalette'
+import payrollReportRouter from './payrollReport'
+import attendanceRouter from './attendance'
+import absenceRouter from './absence'
+import payrollAutomationRouter from './payrollAutomation'
+import commissionPeriodRouter from './commissionPeriod'
+import commissionPeriodReportRouter from './commissionPeriodReport'
 
 const router = express.Router();
 router.use('/auth', authRouter)
@@ -58,5 +64,11 @@ router.use('/inventory', inventoryRouter)
 router.use('/loyalty', loyaltyRouter)
 router.use('/client-retention', clientRetentionRouter)
 router.use('/color-palette', colorPaletteRouter)
+router.use('/payroll-reports', payrollReportRouter)
+router.use('/attendance', attendanceRouter)
+router.use('/absence', absenceRouter)
+router.use('/payroll-automation', payrollAutomationRouter)
+router.use('/commission-periods', commissionPeriodRouter)
+router.use('/commission-period-reports', commissionPeriodReportRouter)
 
 export default router

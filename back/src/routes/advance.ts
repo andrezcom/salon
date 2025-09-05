@@ -24,14 +24,23 @@ router.put('/business/:businessId/advances/:advanceId/mark-as-paid', AdvanceCont
 // Cancelar anticipo
 router.put('/business/:businessId/advances/:advanceId/cancel', AdvanceController.cancelAdvance);
 
+// Aplicar descuento de nómina
+router.put('/business/:businessId/advances/:advanceId/apply-payroll-deduction', AdvanceController.applyPayrollDeduction);
+
 // Aplicar descuento de comisión
-router.put('/business/:businessId/advances/:advanceId/apply-deduction', AdvanceController.applyCommissionDeduction);
+router.put('/business/:businessId/advances/:advanceId/apply-commission-deduction', AdvanceController.applyCommissionDeduction);
 
 // Marcar anticipo como reembolsado
 router.put('/business/:businessId/advances/:advanceId/mark-as-repaid', AdvanceController.markAdvanceAsRepaid);
 
-// Obtener resumen de anticipos por experto
-router.get('/business/:businessId/experts/:expertId/advance-summary', AdvanceController.getExpertAdvanceSummary);
+// Obtener anticipos pendientes de descuento para nómina
+router.get('/business/:businessId/employees/:employeeId/pending-payroll-deductions', AdvanceController.getPendingPayrollDeductions);
+
+// Obtener anticipos pendientes de descuento para comisiones
+router.get('/business/:businessId/employees/:employeeId/pending-commission-deductions', AdvanceController.getPendingCommissionDeductions);
+
+// Obtener resumen de anticipos por empleado
+router.get('/business/:businessId/employees/:employeeId/advance-summary', AdvanceController.getEmployeeAdvanceSummary);
 
 // Obtener reporte de anticipos
 router.get('/business/:businessId/advances/report', AdvanceController.getAdvanceReport);

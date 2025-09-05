@@ -49,6 +49,8 @@ export const ROLE_PERMISSIONS: Record<UserRole, IPermission[]> = {
     { module: 'cash', actions: ['create', 'read', 'update', 'delete'] },
     { module: 'expenses', actions: ['create', 'read', 'update', 'delete'] },
     { module: 'payroll', actions: ['create', 'read', 'update', 'approve', 'pay'] },
+    { module: 'attendance', actions: ['create', 'read', 'update', 'delete', 'approve'] },
+    { module: 'absence', actions: ['create', 'read', 'update', 'delete', 'approve'] },
     { module: 'suppliers', actions: ['create', 'read', 'update', 'delete'] },
     { module: 'accountsPayable', actions: ['create', 'read', 'update', 'pay'] },
     { module: 'purchaseOrders', actions: ['create', 'read', 'update', 'approve'] },
@@ -67,6 +69,8 @@ export const ROLE_PERMISSIONS: Record<UserRole, IPermission[]> = {
     { module: 'cash', actions: ['read', 'update'] },
     { module: 'expenses', actions: ['create', 'read', 'update'] },
     { module: 'payroll', actions: ['read'] },
+    { module: 'attendance', actions: ['read', 'update'] },
+    { module: 'absence', actions: ['read', 'approve'] },
     { module: 'suppliers', actions: ['read'] },
     { module: 'accountsPayable', actions: ['read'] },
     { module: 'purchaseOrders', actions: ['read'] },
@@ -85,6 +89,8 @@ export const ROLE_PERMISSIONS: Record<UserRole, IPermission[]> = {
     { module: 'cash', actions: ['create', 'read', 'update'] },
     { module: 'expenses', actions: ['read'] },
     { module: 'payroll', actions: ['read'] },
+    { module: 'attendance', actions: ['read'] },
+    { module: 'absence', actions: ['read'] },
     { module: 'reports', actions: ['read'] },
     { module: 'settings', actions: ['read'] }
   ],
@@ -97,6 +103,8 @@ export const ROLE_PERMISSIONS: Record<UserRole, IPermission[]> = {
     { module: 'commissions', actions: ['read'] },
     { module: 'cash', actions: ['read'] },
     { module: 'expenses', actions: ['read'] },
+    { module: 'attendance', actions: ['read'] },
+    { module: 'absence', actions: ['read'] },
     { module: 'reports', actions: ['read'] },
     { module: 'settings', actions: ['read'] }
   ],
@@ -109,6 +117,8 @@ export const ROLE_PERMISSIONS: Record<UserRole, IPermission[]> = {
     { module: 'commissions', actions: ['read'] },
     { module: 'cash', actions: ['read'] },
     { module: 'expenses', actions: ['read'] },
+    { module: 'attendance', actions: ['read'] },
+    { module: 'absence', actions: ['read'] },
     { module: 'reports', actions: ['read'] },
     { module: 'settings', actions: ['read'] }
   ]
