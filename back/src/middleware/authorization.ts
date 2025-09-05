@@ -7,9 +7,15 @@ declare global {
     interface Request {
       user?: {
         id: string;
+        businessId: string;
         email: string;
         name: string;
         role: string;
+        permissions?: any[];
+        userInfo?: {
+          businesses: string[];
+          permissions: any[];
+        };
       };
     }
   }
@@ -75,7 +81,7 @@ export const requirePermission = (module: string, action: string) => {
         data: {
           requiredPermission: { module, action },
           userRole: req.user.role,
-          userPermissions: user.userInfo?.permissions || []
+          userPermissions: req.user.userInfo?.permissions || []
         }
       });
       return;
@@ -107,7 +113,7 @@ export const requireAllPermissions = (permissions: { module: string; action: str
         data: {
           missingPermissions,
           userRole: req.user.role,
-          userPermissions: user.userInfo?.permissions || []
+          userPermissions: req.user.userInfo?.permissions || []
         }
       });
       return;
@@ -139,7 +145,7 @@ export const requireAnyPermission = (permissions: { module: string; action: stri
         data: {
           requiredPermissions: permissions,
           userRole: req.user.role,
-          userPermissions: user.userInfo?.permissions || []
+          userPermissions: req.user.userInfo?.permissions || []
         }
       });
       return;
@@ -177,13 +183,13 @@ export const requireBusinessAccess = (businessIdParam: string = 'businessId') =>
     }
 
     // Verificar si el usuario tiene acceso al negocio
-    if (!user.userInfo?.businesses.includes(businessId)) {
+    if (!req.user.userInfo?.businesses.includes(businessId)) {
       res.status(403).json({
         success: false,
         message: 'Acceso denegado. No tienes permisos para acceder a este negocio.',
         data: {
           businessId,
-          userBusinesses: user.userInfo?.businesses || []
+          userBusinesses: req.user.userInfo?.businesses || []
         }
       });
       return;

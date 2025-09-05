@@ -43,13 +43,25 @@ export interface IProduct extends Document {
     reorderQuantity: number; // Cantidad a reordenar
   };
   
-  // Información del proveedor
-  supplier: {
-    name: string;
-    contact?: string;
-    phone?: string;
-    email?: string;
-    address?: string;
+  // Información de proveedores (múltiples proveedores por producto)
+  suppliers: Array<{
+    supplierId: string; // Referencia al proveedor
+    supplierName: string; // Nombre del proveedor
+    costPrice: number; // Costo específico de este proveedor
+    minimumOrder: number; // Pedido mínimo
+    leadTime: number; // Tiempo de entrega en días
+    isPreferred: boolean; // Proveedor preferido
+    isActive: boolean; // Si está activo para este producto
+    lastPurchaseDate?: Date; // Última fecha de compra
+    lastPurchasePrice?: number; // Último precio pagado
+    notes?: string; // Notas específicas del proveedor
+  }>;
+  
+  // Proveedor principal (para compatibilidad)
+  primarySupplier: {
+    supplierId: string;
+    supplierName: string;
+    costPrice: number;
   };
   
   // Estado y configuración
@@ -221,32 +233,72 @@ const productSchema = new Schema<IProduct>({
     }
   },
   
-  // Información del proveedor
-  supplier: {
-    name: {
+  // Información de proveedores (múltiples proveedores por producto)
+  suppliers: [{
+    supplierId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Supplier',
+      required: true
+    },
+    supplierName: {
       type: String,
       required: true,
       trim: true
     },
-    contact: {
+    costPrice: {
+      type: Number,
+      required: true,
+      min: 0
+    },
+    minimumOrder: {
+      type: Number,
+      required: true,
+      min: 0,
+      default: 1
+    },
+    leadTime: {
+      type: Number,
+      required: true,
+      min: 0,
+      default: 7 // 7 días por defecto
+    },
+    isPreferred: {
+      type: Boolean,
+      default: false
+    },
+    isActive: {
+      type: Boolean,
+      default: true
+    },
+    lastPurchaseDate: {
+      type: Date
+    },
+    lastPurchasePrice: {
+      type: Number,
+      min: 0
+    },
+    notes: {
       type: String,
-      required: false,
+      trim: true
+    }
+  }],
+  
+  // Proveedor principal (para compatibilidad)
+  primarySupplier: {
+    supplierId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Supplier',
+      required: true
+    },
+    supplierName: {
+      type: String,
+      required: true,
       trim: true
     },
-    phone: {
-      type: String,
-      required: false,
-      trim: true
-    },
-    email: {
-      type: String,
-      required: false,
-      trim: true
-    },
-    address: {
-      type: String,
-      required: false,
-      trim: true
+    costPrice: {
+      type: Number,
+      required: true,
+      min: 0
     }
   },
   

@@ -1,64 +1,56 @@
-import { Router } from 'express';
+import express from 'express';
 import { InventoryController } from '../controllers/inventory';
+import { authenticateToken, requirePermission } from '../middleware/auth';
 
-const router = Router();
+const router = express.Router();
 
-// ===== GESTIÓN DE PRODUCTOS =====
+// Rutas para gestión de inventario
+router.get('/summary',
+  authenticateToken,
+  requirePermission('inventory', 'read'),
+  InventoryController.getInventorySummary
+);
 
-// Obtener todos los productos
-router.get('/business/:businessId/products', InventoryController.getProducts);
+router.get('/low-stock',
+  authenticateToken,
+  requirePermission('inventory', 'read'),
+  InventoryController.getLowStockProducts
+);
 
-// Obtener un producto específico
-router.get('/business/:businessId/products/:productId', InventoryController.getProduct);
+router.get('/reorder',
+  authenticateToken,
+  requirePermission('inventory', 'read'),
+  InventoryController.getReorderProducts
+);
 
-// Crear producto
-router.post('/business/:businessId/products', InventoryController.createProduct);
+router.get('/category/:category',
+  authenticateToken,
+  requirePermission('inventory', 'read'),
+  InventoryController.getProductsByCategory
+);
 
-// Actualizar producto
-router.put('/business/:businessId/products/:productId', InventoryController.updateProduct);
+router.get('/history/:productId',
+  authenticateToken,
+  requirePermission('inventory', 'read'),
+  InventoryController.getInventoryHistory
+);
 
-// Eliminar producto (soft delete por defecto)
-router.delete('/business/:businessId/products/:productId', InventoryController.deleteProduct);
+router.get('/report',
+  authenticateToken,
+  requirePermission('inventory', 'read'),
+  InventoryController.generateInventoryReport
+);
 
-// Restaurar producto (deshacer soft delete)
-router.patch('/business/:businessId/products/:productId/restore', InventoryController.restoreProduct);
+router.post('/entry',
+  authenticateToken,
+  requirePermission('inventory', 'create'),
+  InventoryController.createInventoryEntry
+);
 
-// ===== GESTIÓN DE INVENTARIO =====
-
-// Agregar stock (compra)
-router.post('/business/:businessId/products/:productId/add-stock', InventoryController.addStock);
-
-// Reducir stock (venta/consumo)
-router.post('/business/:businessId/products/:productId/reduce-stock', InventoryController.reduceStock);
-
-// Ajustar stock (inventario físico)
-router.post('/business/:businessId/products/:productId/adjust-stock', InventoryController.adjustStock);
-
-// Registrar pérdida de inventario
-router.post('/business/:businessId/products/:productId/record-loss', InventoryController.recordLoss);
-
-// Registrar múltiples pérdidas
-router.post('/business/:businessId/inventory/record-multiple-losses', InventoryController.recordMultipleLosses);
-
-// ===== MOVIMIENTOS DE INVENTARIO =====
-
-// Obtener movimientos de un producto
-router.get('/business/:businessId/products/:productId/movements', InventoryController.getProductMovements);
-
-// ===== REPORTES Y RESUMENES =====
-
-// Obtener resumen de inventario
-router.get('/business/:businessId/inventory/summary', InventoryController.getInventorySummary);
-
-// Obtener productos con stock bajo
-router.get('/business/:businessId/inventory/low-stock', InventoryController.getLowStockProducts);
-
-// Obtener reporte de movimientos
-router.get('/business/:businessId/inventory/movements/report', InventoryController.getMovementReport);
-
-// ===== INTEGRACIÓN CON GASTOS =====
-
-// Crear gasto de compra de productos
-router.post('/business/:businessId/products/:productId/purchase-expense', InventoryController.createPurchaseExpense);
+router.post('/adjust',
+  authenticateToken,
+  requirePermission('inventory', 'update'),
+  InventoryController.adjustInventory
+);
 
 export default router;

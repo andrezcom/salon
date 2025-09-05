@@ -30,6 +30,12 @@ export const ROLE_PERMISSIONS: Record<UserRole, IPermission[]> = {
     { module: 'commissions', actions: ['create', 'read', 'update', 'delete', 'manage'] },
     { module: 'cash', actions: ['create', 'read', 'update', 'delete', 'manage'] },
     { module: 'expenses', actions: ['create', 'read', 'update', 'delete', 'manage'] },
+    { module: 'payroll', actions: ['create', 'read', 'update', 'delete', 'approve', 'pay', 'manage'] },
+    { module: 'suppliers', actions: ['create', 'read', 'update', 'delete', 'manage'] },
+    { module: 'accountsPayable', actions: ['create', 'read', 'update', 'delete', 'pay', 'manage'] },
+    { module: 'purchaseOrders', actions: ['create', 'read', 'update', 'delete', 'approve', 'manage'] },
+    { module: 'loyalty', actions: ['create', 'read', 'update', 'delete', 'manage'] },
+    { module: 'clientRetention', actions: ['create', 'read', 'update', 'delete', 'manage'] },
     { module: 'reports', actions: ['create', 'read', 'update', 'delete', 'manage'] },
     { module: 'settings', actions: ['create', 'read', 'update', 'delete', 'manage'] }
   ],
@@ -42,6 +48,12 @@ export const ROLE_PERMISSIONS: Record<UserRole, IPermission[]> = {
     { module: 'commissions', actions: ['create', 'read', 'update', 'delete'] },
     { module: 'cash', actions: ['create', 'read', 'update', 'delete'] },
     { module: 'expenses', actions: ['create', 'read', 'update', 'delete'] },
+    { module: 'payroll', actions: ['create', 'read', 'update', 'approve', 'pay'] },
+    { module: 'suppliers', actions: ['create', 'read', 'update', 'delete'] },
+    { module: 'accountsPayable', actions: ['create', 'read', 'update', 'pay'] },
+    { module: 'purchaseOrders', actions: ['create', 'read', 'update', 'approve'] },
+    { module: 'loyalty', actions: ['create', 'read', 'update', 'delete'] },
+    { module: 'clientRetention', actions: ['create', 'read', 'update', 'delete'] },
     { module: 'reports', actions: ['read'] },
     { module: 'settings', actions: ['read', 'update'] }
   ],
@@ -54,6 +66,12 @@ export const ROLE_PERMISSIONS: Record<UserRole, IPermission[]> = {
     { module: 'commissions', actions: ['read', 'update'] },
     { module: 'cash', actions: ['read', 'update'] },
     { module: 'expenses', actions: ['create', 'read', 'update'] },
+    { module: 'payroll', actions: ['read'] },
+    { module: 'suppliers', actions: ['read'] },
+    { module: 'accountsPayable', actions: ['read'] },
+    { module: 'purchaseOrders', actions: ['read'] },
+    { module: 'loyalty', actions: ['read'] },
+    { module: 'clientRetention', actions: ['read'] },
     { module: 'reports', actions: ['read'] },
     { module: 'settings', actions: ['read'] }
   ],
@@ -66,6 +84,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, IPermission[]> = {
     { module: 'commissions', actions: ['read'] },
     { module: 'cash', actions: ['create', 'read', 'update'] },
     { module: 'expenses', actions: ['read'] },
+    { module: 'payroll', actions: ['read'] },
     { module: 'reports', actions: ['read'] },
     { module: 'settings', actions: ['read'] }
   ],
@@ -298,6 +317,86 @@ const personSchema = new Schema<IPerson>({
     },
     lockUntil: {
       type: Date
+    },
+    salarySettings: {
+      salaryType: {
+        type: String,
+        enum: ['monthly', 'hourly', 'daily'],
+        default: 'monthly'
+      },
+      monthlySalary: {
+        type: Number,
+        default: 0,
+        min: 0
+      },
+      hourlyRate: {
+        type: Number,
+        default: 0,
+        min: 0
+      },
+      dailyRate: {
+        type: Number,
+        default: 0,
+        min: 0
+      },
+      transportSubsidy: {
+        type: Number,
+        default: 0,
+        min: 0
+      },
+      overtimeRate: {
+        type: Number,
+        default: 1.5,
+        min: 1
+      },
+      withholdings: {
+        taxWithholding: {
+          type: Boolean,
+          default: false
+        },
+        taxRate: {
+          type: Number,
+          default: 0.1,
+          min: 0,
+          max: 1
+        },
+        socialSecurity: {
+          type: Boolean,
+          default: false
+        },
+        socialSecurityRate: {
+          type: Number,
+          default: 0.04,
+          min: 0,
+          max: 1
+        },
+        healthInsurance: {
+          type: Boolean,
+          default: false
+        },
+        healthInsuranceRate: {
+          type: Number,
+          default: 0.04,
+          min: 0,
+          max: 1
+        }
+      },
+      position: {
+        type: String,
+        trim: true
+      },
+      department: {
+        type: String,
+        trim: true
+      },
+      hireDate: {
+        type: Date
+      },
+      contractType: {
+        type: String,
+        enum: ['full_time', 'part_time', 'contract', 'intern'],
+        default: 'full_time'
+      }
     }
   },
   expertInfo: {

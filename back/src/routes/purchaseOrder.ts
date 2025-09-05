@@ -1,37 +1,68 @@
-import { Router } from 'express';
+import express from 'express';
 import { PurchaseOrderController } from '../controllers/purchaseOrder';
+import { authenticateToken, requirePermission } from '../middleware/auth';
 
-const router = Router();
+const router = express.Router();
 
-// ===== INFORMES DE STOCK MÍNIMO =====
+// Rutas para gestión de órdenes de compra
+router.get('/',
+  authenticateToken,
+  requirePermission('purchaseOrders', 'read'),
+  PurchaseOrderController.getPurchaseOrders
+);
 
-// Obtener informe de stock mínimo
-router.get('/business/:businessId/inventory/low-stock-report', PurchaseOrderController.getLowStockReport);
+router.get('/supplier/:supplierId',
+  authenticateToken,
+  requirePermission('purchaseOrders', 'read'),
+  PurchaseOrderController.getOrdersBySupplier
+);
 
-// ===== GESTIÓN DE ÓRDENES DE COMPRA =====
+router.get('/supplier/:supplierId/summary',
+  authenticateToken,
+  requirePermission('purchaseOrders', 'read'),
+  PurchaseOrderController.getSupplierSummary
+);
 
-// Obtener todas las órdenes de compra
-router.get('/business/:businessId/purchase-orders', PurchaseOrderController.getPurchaseOrders);
+router.get('/:id',
+  authenticateToken,
+  requirePermission('purchaseOrders', 'read'),
+  PurchaseOrderController.getPurchaseOrderById
+);
 
-// Obtener una orden específica
-router.get('/business/:businessId/purchase-orders/:orderId', PurchaseOrderController.getPurchaseOrder);
+router.post('/',
+  authenticateToken,
+  requirePermission('purchaseOrders', 'create'),
+  PurchaseOrderController.createPurchaseOrder
+);
 
-// Generar orden automática
-router.post('/business/:businessId/purchase-orders/generate-automatic', PurchaseOrderController.generateAutomaticOrder);
+router.put('/:id',
+  authenticateToken,
+  requirePermission('purchaseOrders', 'update'),
+  PurchaseOrderController.updatePurchaseOrder
+);
 
-// Crear orden manual
-router.post('/business/:businessId/purchase-orders', PurchaseOrderController.createManualOrder);
+router.post('/:id/approve',
+  authenticateToken,
+  requirePermission('purchaseOrders', 'approve'),
+  PurchaseOrderController.approvePurchaseOrder
+);
 
-// Aprobar orden
-router.put('/business/:businessId/purchase-orders/:orderId/approve', PurchaseOrderController.approveOrder);
+router.post('/:id/confirm',
+  authenticateToken,
+  requirePermission('purchaseOrders', 'update'),
+  PurchaseOrderController.confirmPurchaseOrder
+);
 
-// Enviar orden
-router.put('/business/:businessId/purchase-orders/:orderId/send', PurchaseOrderController.sendOrder);
+router.post('/:id/receive',
+  authenticateToken,
+  requirePermission('purchaseOrders', 'update'),
+  PurchaseOrderController.receiveItems
+);
 
-// Marcar como recibida
-router.put('/business/:businessId/purchase-orders/:orderId/receive', PurchaseOrderController.markAsReceived);
-
-// Obtener resumen de órdenes
-router.get('/business/:businessId/purchase-orders/summary', PurchaseOrderController.getOrderSummary);
+router.put('/:id/cancel',
+  authenticateToken,
+  requirePermission('purchaseOrders', 'update'),
+  PurchaseOrderController.cancelPurchaseOrder
+);
 
 export default router;

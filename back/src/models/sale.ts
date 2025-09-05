@@ -36,6 +36,18 @@ export interface ISale extends Document {
     expertId: string; // Cambiado a string para referenciar Person._id
   }>;
   total: number;
+  subtotal: number; // Total antes de descuentos
+  discounts: Array<{
+    type: 'percentage' | 'fixed_amount' | 'promotional' | 'loyalty' | 'bulk' | 'seasonal';
+    description: string;
+    value: number; // Porcentaje o monto fijo
+    appliedAmount: number; // Monto real descontado
+    reason?: string; // Razón del descuento
+    appliedBy?: string; // ID de quien aplicó el descuento
+    appliedAt?: Date;
+  }>;
+  totalDiscounts: number; // Total de descuentos aplicados
+  finalTotal: number; // Total final después de descuentos
   paymentMethod: Array<{
     payment: string;
     amount: number;
@@ -170,7 +182,58 @@ const saleSchema = new Schema<ISale>({
   }],
   total: {
     type: Number,
+    required: true
+  },
+  subtotal: {
+    type: Number,
+    required: true,
+    default: 0
+  },
+  discounts: [{
+    type: {
+      type: String,
+      enum: ['percentage', 'fixed_amount', 'promotional', 'loyalty', 'bulk', 'seasonal'],
       required: true
+    },
+    description: {
+      type: String,
+      required: true,
+      trim: true
+    },
+    value: {
+      type: Number,
+      required: true,
+      min: 0
+    },
+    appliedAmount: {
+      type: Number,
+      required: true,
+      min: 0
+    },
+    reason: {
+      type: String,
+      trim: true
+    },
+    appliedBy: {
+      type: Schema.Types.ObjectId,
+      ref: 'Person'
+    },
+    appliedAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
+  totalDiscounts: {
+    type: Number,
+    required: true,
+    default: 0,
+    min: 0
+  },
+  finalTotal: {
+    type: Number,
+    required: true,
+    default: 0,
+    min: 0
   },
   paymentMethod: [{
     payment: {
@@ -547,5 +610,120 @@ saleSchema.methods.changeStatus = async function(newStatus: SaleStatus, userId?:
   
   await this.save();
 };
+
+// Método para calcular subtotal (antes de descuentos)
+saleSchema.methods.calculateSubtotal = function(): number {
+  const servicesTotal = this.services.reduce((total: number, service: any) => total + service.amount, 0);
+  const retailTotal = this.retail.reduce((total: number, item: any) => total + item.amount, 0);
+  this.subtotal = servicesTotal + retailTotal;
+  return this.subtotal;
+};
+
+// Método para aplicar descuento
+saleSchema.methods.applyDiscount = function(
+  type: 'percentage' | 'fixed_amount' | 'promotional' | 'loyalty' | 'bulk' | 'seasonal',
+  value: number,
+  description: string,
+  appliedBy?: string,
+  reason?: string
+): number {
+  // Calcular subtotal si no está calculado
+  if (!this.subtotal) {
+    this.calculateSubtotal();
+  }
+
+  let appliedAmount = 0;
+
+  if (type === 'percentage') {
+    // Descuento por porcentaje
+    appliedAmount = (this.subtotal * value) / 100;
+  } else if (type === 'fixed_amount') {
+    // Descuento por monto fijo
+    appliedAmount = Math.min(value, this.subtotal - this.totalDiscounts);
+  } else {
+    // Otros tipos de descuento (promocional, lealtad, etc.)
+    appliedAmount = Math.min(value, this.subtotal - this.totalDiscounts);
+  }
+
+  // Verificar que no exceda el subtotal disponible
+  const availableForDiscount = this.subtotal - this.totalDiscounts;
+  appliedAmount = Math.min(appliedAmount, availableForDiscount);
+
+  if (appliedAmount > 0) {
+    // Agregar descuento
+    this.discounts.push({
+      type,
+      description,
+      value,
+      appliedAmount,
+      reason,
+      appliedBy,
+      appliedAt: new Date()
+    });
+
+    // Actualizar totales
+    this.totalDiscounts += appliedAmount;
+    this.finalTotal = Math.max(0, this.subtotal - this.totalDiscounts);
+  }
+
+  return appliedAmount;
+};
+
+// Método para remover descuento
+saleSchema.methods.removeDiscount = function(discountIndex: number): boolean {
+  if (discountIndex >= 0 && discountIndex < this.discounts.length) {
+    const removedDiscount = this.discounts.splice(discountIndex, 1)[0];
+    this.totalDiscounts -= removedDiscount.appliedAmount;
+    this.finalTotal = Math.max(0, this.subtotal - this.totalDiscounts);
+    return true;
+  }
+  return false;
+};
+
+// Método para recalcular totales
+saleSchema.methods.recalculateTotals = function(): void {
+  // Calcular subtotal
+  this.calculateSubtotal();
+  
+  // Recalcular total de descuentos
+  this.totalDiscounts = this.discounts.reduce((total: number, discount: any) => total + discount.appliedAmount, 0);
+  
+  // Calcular total final
+  this.finalTotal = Math.max(0, this.subtotal - this.totalDiscounts);
+  
+  // Actualizar total (para compatibilidad)
+  this.total = this.finalTotal;
+};
+
+// Método para obtener resumen de descuentos
+saleSchema.methods.getDiscountSummary = function() {
+  const summary = {
+    totalDiscounts: this.totalDiscounts,
+    discountCount: this.discounts.length,
+    subtotal: this.subtotal,
+    finalTotal: this.finalTotal,
+    savingsPercentage: this.subtotal > 0 ? (this.totalDiscounts / this.subtotal) * 100 : 0,
+    discountsByType: {} as Record<string, { count: number; total: number }>
+  };
+
+  // Agrupar descuentos por tipo
+  this.discounts.forEach((discount: any) => {
+    if (!summary.discountsByType[discount.type]) {
+      summary.discountsByType[discount.type] = { count: 0, total: 0 };
+    }
+    summary.discountsByType[discount.type].count++;
+    summary.discountsByType[discount.type].total += discount.appliedAmount;
+  });
+
+  return summary;
+};
+
+// Middleware pre-save para calcular totales automáticamente
+saleSchema.pre('save', function(next) {
+  if (this.isModified('services') || this.isModified('retail') || this.isModified('discounts')) {
+    this.recalculateTotals();
+  }
+  next();
+});
 
 export default model<ISale>('Sale', saleSchema);

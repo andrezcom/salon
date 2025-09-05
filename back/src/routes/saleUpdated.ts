@@ -55,4 +55,34 @@ router.post('/sales/:saleId/recalculate-commissions',
   SaleController.recalculateCommissions
 );
 
+// ===== RUTAS PARA MANEJO DE DESCUENTOS =====
+
+// Aplicar descuento a una venta
+router.post('/sales/:saleId/discounts', 
+  requireAuth,
+  requirePermission('sales', 'update'),
+  SaleController.applyDiscount
+);
+
+// Remover descuento de una venta
+router.delete('/sales/:saleId/discounts/:discountIndex', 
+  requireAuth,
+  requirePermission('sales', 'update'),
+  SaleController.removeDiscount
+);
+
+// Obtener resumen de descuentos de una venta
+router.get('/sales/:saleId/discounts/summary', 
+  requireAuth,
+  requirePermission('sales', 'read'),
+  SaleController.getDiscountSummary
+);
+
+// Recalcular totales de una venta
+router.post('/sales/:saleId/recalculate-totals', 
+  requireAuth,
+  requirePermission('sales', 'update'),
+  SaleController.recalculateTotals
+);
+
 export default router;

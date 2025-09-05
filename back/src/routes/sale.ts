@@ -5,7 +5,10 @@ import {
   postSaleCtrl, 
   putSaleCtrl, 
   deleteSaleCtrl,
-  getSalesByExpertCtrl 
+  getSalesByExpertCtrl,
+  applyDiscountCtrl,
+  getDiscountSummaryCtrl,
+  calculateSaleImpactCtrl
 } from '../controllers/sale'
 import { requireAuth, requirePermission } from '../middleware/authorization'
 
@@ -47,6 +50,26 @@ router.get('/expert/:expertId',
   requireAuth,
   requirePermission('sales', 'read'),
   getSalesByExpertCtrl
+)
+
+// Rutas para manejo de descuentos
+router.post('/:id/discounts', 
+  requireAuth,
+  requirePermission('sales', 'update'),
+  applyDiscountCtrl
+)
+
+router.get('/:id/discounts/summary', 
+  requireAuth,
+  requirePermission('sales', 'read'),
+  getDiscountSummaryCtrl
+)
+
+// Ruta para calcular impacto de venta en inventario
+router.post('/calculate-impact', 
+  requireAuth,
+  requirePermission('sales', 'read'),
+  calculateSaleImpactCtrl
 )
 
 export default router

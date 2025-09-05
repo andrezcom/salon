@@ -516,4 +516,225 @@ export class SaleController {
       });
     }
   }
+
+  // Aplicar descuento a una venta
+  static async applyDiscount(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const { 
+        type, 
+        value, 
+        description, 
+        reason 
+      } = req.body;
+      const appliedBy = req.user?.id;
+
+      if (!type || value === undefined || !description) {
+        res.status(400).json({
+          success: false,
+          message: 'Tipo, valor y descripción son requeridos'
+        });
+        return;
+      }
+
+      const sale = await Sale.findById(id);
+      if (!sale) {
+        res.status(404).json({
+          success: false,
+          message: 'Venta no encontrada'
+        });
+        return;
+      }
+
+      if (sale.status === 'cancelled') {
+        res.status(400).json({
+          success: false,
+          message: 'No se puede aplicar descuentos a una venta cancelada'
+        });
+        return;
+      }
+
+      // Aplicar descuento
+      const appliedAmount = sale.applyDiscount(
+        type,
+        value,
+        description,
+        appliedBy,
+        reason
+      );
+
+      await sale.save();
+
+      // Obtener venta actualizada
+      const updatedSale = await Sale.findById(id)
+        .populate('services.expertId', 'firstName lastName expertInfo.alias')
+        .populate('retail.expertId', 'firstName lastName expertInfo.alias')
+        .populate('discounts.appliedBy', 'firstName lastName');
+
+      res.status(200).json({
+        success: true,
+        message: 'Descuento aplicado exitosamente',
+        data: {
+          sale: updatedSale,
+          appliedAmount,
+          discountSummary: sale.getDiscountSummary()
+        }
+      });
+
+    } catch (error) {
+      console.error('Error aplicando descuento:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor',
+        error: error instanceof Error ? error.message : 'Error desconocido'
+      });
+    }
+  }
+
+  // Remover descuento de una venta
+  static async removeDiscount(req: Request, res: Response): Promise<void> {
+    try {
+      const { id, discountIndex } = req.params;
+
+      const sale = await Sale.findById(id);
+      if (!sale) {
+        res.status(404).json({
+          success: false,
+          message: 'Venta no encontrada'
+        });
+        return;
+      }
+
+      if (sale.status === 'cancelled') {
+        res.status(400).json({
+          success: false,
+          message: 'No se puede modificar descuentos de una venta cancelada'
+        });
+        return;
+      }
+
+      const index = parseInt(discountIndex);
+      const removed = sale.removeDiscount(index);
+
+      if (!removed) {
+        res.status(400).json({
+          success: false,
+          message: 'Índice de descuento inválido'
+        });
+        return;
+      }
+
+      await sale.save();
+
+      // Obtener venta actualizada
+      const updatedSale = await Sale.findById(id)
+        .populate('services.expertId', 'firstName lastName expertInfo.alias')
+        .populate('retail.expertId', 'firstName lastName expertInfo.alias')
+        .populate('discounts.appliedBy', 'firstName lastName');
+
+      res.status(200).json({
+        success: true,
+        message: 'Descuento removido exitosamente',
+        data: {
+          sale: updatedSale,
+          discountSummary: sale.getDiscountSummary()
+        }
+      });
+
+    } catch (error) {
+      console.error('Error removiendo descuento:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor',
+        error: error instanceof Error ? error.message : 'Error desconocido'
+      });
+    }
+  }
+
+  // Obtener resumen de descuentos de una venta
+  static async getDiscountSummary(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+
+      const sale = await Sale.findById(id);
+      if (!sale) {
+        res.status(404).json({
+          success: false,
+          message: 'Venta no encontrada'
+        });
+        return;
+      }
+
+      const summary = sale.getDiscountSummary();
+
+      res.status(200).json({
+        success: true,
+        message: 'Resumen de descuentos obtenido exitosamente',
+        data: summary
+      });
+
+    } catch (error) {
+      console.error('Error obteniendo resumen de descuentos:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor',
+        error: error instanceof Error ? error.message : 'Error desconocido'
+      });
+    }
+  }
+
+  // Recalcular totales de una venta
+  static async recalculateTotals(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+
+      const sale = await Sale.findById(id);
+      if (!sale) {
+        res.status(404).json({
+          success: false,
+          message: 'Venta no encontrada'
+        });
+        return;
+      }
+
+      if (sale.status === 'cancelled') {
+        res.status(400).json({
+          success: false,
+          message: 'No se puede recalcular totales de una venta cancelada'
+        });
+        return;
+      }
+
+      // Recalcular totales
+      sale.recalculateTotals();
+      await sale.save();
+
+      // Obtener venta actualizada
+      const updatedSale = await Sale.findById(id)
+        .populate('services.expertId', 'firstName lastName expertInfo.alias')
+        .populate('retail.expertId', 'firstName lastName expertInfo.alias')
+        .populate('discounts.appliedBy', 'firstName lastName');
+
+      res.status(200).json({
+        success: true,
+        message: 'Totales recalculados exitosamente',
+        data: {
+          sale: updatedSale,
+          totals: {
+            subtotal: sale.subtotal,
+            totalDiscounts: sale.totalDiscounts,
+            finalTotal: sale.finalTotal
+          }
+        }
+      });
+
+    } catch (error) {
+      console.error('Error recalculando totales:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor',
+        error: error instanceof Error ? error.message : 'Error desconocido'
+      });
+    }
+  }
 }
